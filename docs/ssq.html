@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔴🔵 双色球分区冷热分析仪表盘</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f5f5;
+    --card-bg: #ffffff;
+    --text: #333333;
+    --red: #C30D23;
+    --blue: #1565C0;
+    --gold: #D4A843;
+    --hot: #e74c3c;
+    --warm: #f39c12;
+    --cold: #3498db;
+    --ice: #95a5a6;
+    --border: #e0e0e0;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); }
+  .header { background: linear-gradient(135deg, var(--red), #a00a1c); color: #fff; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .header h1 { font-size: 1.5em; }
+  .header .meta { font-size: 0.85em; opacity: 0.85; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+  .row { display: grid; gap: 16px; margin-bottom: 16px; }
+  .row-4 { grid-template-columns: repeat(4, 1fr); }
+  .row-3 { grid-template-columns: 2fr 1fr 1fr; }
+  .row-2 { grid-template-columns: 1fr 1fr; }
+  .row-2-1 { grid-template-columns: 2fr 1fr; }
+  @media (max-width: 1000px) { .row-4, .row-3, .row-2, .row-2-1 { grid-template-columns: 1fr; } }
+  .card { background: var(--card-bg); border-radius: 8px; padding: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+  .card h3 { font-size: 0.95em; margin-bottom: 12px; color: #555; border-bottom: 2px solid var(--red); padding-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-item { text-align: center; padding: 10px; background: #fafafa; border-radius: 6px; }
+  .stat-value { font-size: 1.6em; font-weight: bold; }
+  .stat-value.red { color: var(--red); }
+  .stat-value.blue { color: var(--blue); }
+  .stat-value.gold { color: #b8860b; }
+  .stat-label { font-size: 0.8em; color: #888; margin-top: 2px; }
+  .ball { display: inline-block; width: 34px; height: 34px; line-height: 34px; text-align: center; border-radius: 50%; font-weight: bold; font-size: 0.9em; margin: 2px; color: #fff; }
+  .ball.red { background: var(--red); }
+  .ball.blue { background: var(--blue); }
+  .ball.small { width: 28px; height: 28px; line-height: 28px; font-size: 0.75em; }
+  .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 0.75em; font-weight: bold; margin-left: 3px; color: #fff; }
+  .tag.hot { background: var(--hot); }
+  .tag.warm { background: var(--warm); }
+  .tag.cold { background: var(--cold); }
+  .tag.ice { background: var(--ice); }
+  .pred-group { background: #fff9f0; border: 1px solid #ffe0b2; border-radius: 6px; padding: 12px; margin-bottom: 10px; }
+  .pred-group h4 { color: var(--red); margin-bottom: 6px; font-size: 0.9em; }
+  .pred-detail { font-size: 0.82em; color: #777; margin-top: 6px; }
+  .review-bar { margin: 6px 0; display: flex; align-items: center; gap: 6px; }
+  .review-bar .bar-bg { flex: 1; height: 18px; background: #eee; border-radius: 9px; overflow: hidden; }
+  .review-bar .bar-fill { height: 100%; border-radius: 9px; transition: width 0.5s; }
+  .review-bar .bar-fill.good { background: #4caf50; }
+  .review-bar .bar-fill.ok { background: var(--warm); }
+  .review-bar .bar-fill.bad { background: var(--red); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+  th { background: #f8f8f8; padding: 8px 6px; text-align: center; font-weight: 600; border-bottom: 2px solid var(--border); white-space: nowrap; }
+  td { padding: 6px; text-align: center; border-bottom: 1px solid #f0f0f0; }
+  tr:hover td { background: #fff9f0; }
+  .footer { text-align: center; padding: 20px; color: #999; font-size: 0.8em; }
+  .footer a { color: var(--red); text-decoration: none; }
+  canvas { max-height: 280px; }
+  .heat-cell { display: inline-block; width: 36px; height: 36px; line-height: 36px; text-align: center; margin: 2px; border-radius: 4px; color: #fff; font-weight: bold; font-size: 0.85em; }
+  .heat-0 { background: #e8e8e8; color: #999; }
+  .heat-1 { background: #bbdefb; color: #1565c0; }
+  .heat-2 { background: #64b5f6; color: #fff; }
+  .heat-3 { background: #ff9800; color: #fff; }
+  .heat-4 { background: #f44336; color: #fff; }
+  .heat-5 { background: #b71c1c; color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🔴🔵 双色球 分区冷热分析仪表盘</h1>
+    <div class="meta" id="headerMeta">加载中...</div>
+  </div>
+  <div style="text-align:right; font-size:0.85em;" id="headerRight"></div>
+</div>
+
+<div class="container" id="app">
+  <div style="text-align:center;padding:60px;color:#999;">⏳ 正在加载数据...</div>
+</div>
+
+<div class="footer">
+  <p>数据来源: 中国福利彩票发行管理中心 (cwl.gov.cn) | 图表引擎: Chart.js</p>
+  <p>⚠️ 以上为历史数据统计推演，不构成任何投注建议。彩票开奖为独立随机事件，历史频率不代表未来走势。请理性购彩，量力而行。</p>
+</div>
+
+<script>
+// ====== 数据加载 ======
+const DATA_URL = '../data/dashboard_data.json';
+
+async function loadData() {
+  // 数据已内嵌（由 build_site.js 生成）
+  return {"generatedAt":"2026-08-16T09:39:00.197Z","dataRange":{"totalDraws":33,"earliestIssue":"2026061","latestIssue":"2026093","latestDate":"2026-08-13(四)"},"latestDraw":{"code":"2026093","reds":[5,8,15,20,21,24],"blue":9,"date":"2026-08-13(四)"},"redFrequency":{"1":6,"2":6,"3":4,"4":7,"5":10,"6":6,"7":7,"8":7,"9":4,"10":5,"11":6,"12":6,"13":3,"14":9,"15":7,"16":7,"17":4,"18":8,"19":5,"20":3,"21":6,"22":2,"23":7,"24":11,"25":7,"26":2,"27":7,"28":8,"29":6,"30":6,"31":3,"32":7,"33":6},"blueFrequency":{"1":3,"2":2,"3":3,"4":5,"5":5,"6":1,"7":2,"8":3,"9":2,"10":0,"11":2,"12":1,"13":1,"14":0,"15":2,"16":1},"zoneDistribution":[{"code":"2026064","date":"2026-06-07(日)","reds":[1,9,15,18,29,33],"blue":15,"Z1":2,"Z2":2,"Z3":2,"full":true},{"code":"2026065","date":"2026-06-09(二)","reds":[7,8,16,24,30,32],"blue":2,"Z1":2,"Z2":1,"Z3":3,"full":true},{"code":"2026066","date":"2026-06-11(四)","reds":[5,11,21,23,24,29],"blue":16,"Z1":1,"Z2":1,"Z3":4,"full":true},{"code":"2026067","date":"2026-06-14(日)","reds":[4,19,27,29,30,32],"blue":13,"Z1":1,"Z2":1,"Z3":4,"full":true},{"code":"2026068","date":"2026-06-16(二)","reds":[3,5,16,18,29,32],"blue":4,"Z1":2,"Z2":2,"Z3":2,"full":true},{"code":"2026069","date":"2026-06-18(四)","reds":[12,14,16,17,18,32],"blue":8,"Z1":0,"Z2":5,"Z3":1,"full":false},{"code":"2026070","date":"2026-06-21(日)","reds":[3,6,8,14,26,27],"blue":8,"Z1":3,"Z2":1,"Z3":2,"full":true},{"code":"2026071","date":"2026-06-23(二)","reds":[3,8,19,25,31,33],"blue":5,"Z1":2,"Z2":1,"Z3":3,"full":true},{"code":"2026072","date":"2026-06-25(四)","reds":[7,8,12,15,17,21],"blue":1,"Z1":2,"Z2":3,"Z3":1,"full":true},{"code":"2026073","date":"2026-06-28(日)","reds":[9,10,13,16,19,21],"blue":8,"Z1":2,"Z2":3,"Z3":1,"full":true},{"code":"2026074","date":"2026-06-30(二)","reds":[2,23,24,26,28,32],"blue":4,"Z1":1,"Z2":0,"Z3":5,"full":false},{"code":"2026075","date":"2026-07-02(四)","reds":[8,12,18,21,24,30],"blue":1,"Z1":1,"Z2":2,"Z3":3,"full":true},{"code":"2026076","date":"2026-07-05(日)","reds":[1,3,19,20,24,25],"blue":7,"Z1":2,"Z2":2,"Z3":2,"full":true},{"code":"2026077","date":"2026-07-07(二)","reds":[1,4,5,14,18,25],"blue":4,"Z1":3,"Z2":2,"Z3":1,"full":true},{"code":"2026078","date":"2026-07-09(四)","reds":[7,11,14,16,27,28],"blue":6,"Z1":1,"Z2":3,"Z3":2,"full":true},{"code":"2026079","date":"2026-07-12(日)","reds":[1,11,17,22,24,29],"blue":4,"Z1":1,"Z2":2,"Z3":3,"full":true},{"code":"2026080","date":"2026-07-14(二)","reds":[4,5,11,19,27,32],"blue":1,"Z1":2,"Z2":2,"Z3":2,"full":true},{"code":"2026081","date":"2026-07-16(四)","reds":[6,10,12,15,24,27],"blue":12,"Z1":2,"Z2":2,"Z3":2,"full":true},{"code":"2026082","date":"2026-07-19(日)","reds":[5,7,10,14,21,28],"blue":4,"Z1":3,"Z2":1,"Z3":2,"full":true},{"code":"2026083","date":"2026-07-21(二)","reds":[7,14,15,23,28,33],"blue":3,"Z1":1,"Z2":2,"Z3":3,"full":true},{"code":"2026084","date":"2026-07-23(四)","reds":[1,5,6,10,12,16],"blue":5,"Z1":4,"Z2":2,"Z3":0,"full":false},{"code":"2026085","date":"2026-07-26(日)","reds":[6,9,13,17,24,28],"blue":15,"Z1":2,"Z2":2,"Z3":2,"full":true},{"code":"2026086","date":"2026-07-28(二)","reds":[2,5,14,25,30,32],"blue":5,"Z1":2,"Z2":1,"Z3":3,"full":true},{"code":"2026087","date":"2026-07-30(四)","reds":[4,6,10,18,23,31],"blue":11,"Z1":3,"Z2":1,"Z3":2,"full":true},{"code":"2026088","date":"2026-08-02(日)","reds":[6,7,11,18,22,33],"blue":5,"Z1":2,"Z2":2,"Z3":2,"full":true},{"code":"2026089","date":"2026-08-04(二)","reds":[5,18,23,24,27,33],"blue":3,"Z1":1,"Z2":1,"Z3":4,"full":true},{"code":"2026090","date":"2026-08-06(四)","reds":[2,4,15,23,25,27],"blue":3,"Z1":2,"Z2":1,"Z3":3,"full":true},{"code":"2026091","date":"2026-08-09(日)","reds":[2,13,14,16,20,24],"blue":5,"Z1":1,"Z2":4,"Z3":1,"full":true},{"code":"2026092","date":"2026-08-11(二)","reds":[9,11,12,25,30,33],"blue":11,"Z1":1,"Z2":2,"Z3":3,"full":true},{"code":"2026093","date":"2026-08-13(四)","reds":[5,8,15,20,21,24],"blue":9,"Z1":2,"Z2":2,"Z3":2,"full":true}],"zoneStats":{"Z1":{"name":"一区(小)","hot":["01","02","04","05","06","07","08","10"],"warm":["03","09"],"cold":[],"ice":[]},"Z2":{"name":"二区(中)","hot":["11","12","14","15","16","18","19"],"warm":["13","17","20"],"cold":[],"ice":[]},"Z3":{"name":"三区(大)","hot":["21","23","24","25","27","28","29","30","32","33"],"warm":["31"],"cold":["22","26"],"ice":[]}},"blueZones":{"hot":["01","03","04","05","08"],"warm":["02","07","09","11","15"],"cold":["06","12","13","16"],"ice":["10","14"]},"redRanking":[{"num":"24","count":11,"label":"HOT"},{"num":"05","count":10,"label":"HOT"},{"num":"14","count":9,"label":"HOT"},{"num":"18","count":8,"label":"HOT"},{"num":"28","count":8,"label":"HOT"},{"num":"04","count":7,"label":"HOT"},{"num":"07","count":7,"label":"HOT"},{"num":"08","count":7,"label":"HOT"},{"num":"15","count":7,"label":"HOT"},{"num":"16","count":7,"label":"HOT"}],"blueRanking":[{"num":"04","count":5,"label":"HOT"},{"num":"05","count":5,"label":"HOT"},{"num":"01","count":3,"label":"HOT"},{"num":"03","count":3,"label":"HOT"},{"num":"08","count":3,"label":"HOT"},{"num":"02","count":2,"label":"WARM"},{"num":"07","count":2,"label":"WARM"},{"num":"09","count":2,"label":"WARM"}],"redTrend":[{"4":0,"5":1,"14":0,"18":0,"24":0,"28":0,"code":"2026084"},{"4":0,"5":0,"14":0,"18":0,"24":1,"28":1,"code":"2026085"},{"4":0,"5":1,"14":1,"18":0,"24":0,"28":0,"code":"2026086"},{"4":1,"5":0,"14":0,"18":1,"24":0,"28":0,"code":"2026087"},{"4":0,"5":0,"14":0,"18":1,"24":0,"28":0,"code":"2026088"},{"4":0,"5":1,"14":0,"18":1,"24":1,"28":0,"code":"2026089"},{"4":1,"5":0,"14":0,"18":0,"24":0,"28":0,"code":"2026090"},{"4":0,"5":0,"14":1,"18":0,"24":1,"28":0,"code":"2026091"},{"4":0,"5":0,"14":0,"18":0,"24":0,"28":0,"code":"2026092"},{"4":0,"5":1,"14":0,"18":0,"24":1,"28":0,"code":"2026093"}],"topRedNums":["24","05","14","18","28","04"],"consecutiveTrend":[{"code":"2026064","date":"2026-06-07(日)","count":0,"pairs":[]},{"code":"2026065","date":"2026-06-09(二)","count":1,"pairs":["07-08"]},{"code":"2026066","date":"2026-06-11(四)","count":1,"pairs":["23-24"]},{"code":"2026067","date":"2026-06-14(日)","count":1,"pairs":["29-30"]},{"code":"2026068","date":"2026-06-16(二)","count":0,"pairs":[]},{"code":"2026069","date":"2026-06-18(四)","count":2,"pairs":["16-17","17-18"]},{"code":"2026070","date":"2026-06-21(日)","count":1,"pairs":["26-27"]},{"code":"2026071","date":"2026-06-23(二)","count":0,"pairs":[]},{"code":"2026072","date":"2026-06-25(四)","count":1,"pairs":["07-08"]},{"code":"2026073","date":"2026-06-28(日)","count":1,"pairs":["09-10"]},{"code":"2026074","date":"2026-06-30(二)","count":1,"pairs":["23-24"]},{"code":"2026075","date":"2026-07-02(四)","count":0,"pairs":[]},{"code":"2026076","date":"2026-07-05(日)","count":2,"pairs":["19-20","24-25"]},{"code":"2026077","date":"2026-07-07(二)","count":1,"pairs":["04-05"]},{"code":"2026078","date":"2026-07-09(四)","count":1,"pairs":["27-28"]},{"code":"2026079","date":"2026-07-12(日)","count":0,"pairs":[]},{"code":"2026080","date":"2026-07-14(二)","count":1,"pairs":["04-05"]},{"code":"2026081","date":"2026-07-16(四)","count":0,"pairs":[]},{"code":"2026082","date":"2026-07-19(日)","count":0,"pairs":[]},{"code":"2026083","date":"2026-07-21(二)","count":1,"pairs":["14-15"]},{"code":"2026084","date":"2026-07-23(四)","count":1,"pairs":["05-06"]},{"code":"2026085","date":"2026-07-26(日)","count":0,"pairs":[]},{"code":"2026086","date":"2026-07-28(二)","count":0,"pairs":[]},{"code":"2026087","date":"2026-07-30(四)","count":0,"pairs":[]},{"code":"2026088","date":"2026-08-02(日)","count":1,"pairs":["06-07"]},{"code":"2026089","date":"2026-08-04(二)","count":1,"pairs":["23-24"]},{"code":"2026090","date":"2026-08-06(四)","count":0,"pairs":[]},{"code":"2026091","date":"2026-08-09(日)","count":1,"pairs":["13-14"]},{"code":"2026092","date":"2026-08-11(二)","count":1,"pairs":["11-12"]},{"code":"2026093","date":"2026-08-13(四)","count":1,"pairs":["20-21"]}],"consecutiveRate":0.6333333333333333,"fullCoverageRate":0.9,"latestPrediction":{"generatedAt":"2026-08-16T09:39:00.195Z","forIssue":"2026093","groups":[{"name":"第一组 (2-3-2 分布 / 二区侧重)","reds":[5,8,14,15,18,24,28],"blues":[4,6],"distribution":"2-3-2","hotCount":7,"warmCount":0,"coldCount":0,"consecutivePairs":[[14,15]]},{"name":"第二组 (3-2-2 分布 / 一区侧重)","reds":[4,5,8,14,18,24,28],"blues":[2,12],"distribution":"3-2-2","hotCount":7,"warmCount":0,"coldCount":0,"consecutivePairs":[[4,5]]}]},"review":{"predictionDate":"2026-08-15T08:01:50.884Z","predictedForIssue":"2026093","actualIssue":"2026093","actualReds":[5,8,15,20,21,24],"actualBlue":9,"redHits":[{"name":"第一组 (2-3-2 分布 / 二区侧重)","hitCount":4,"hits":[5,8,15,24]},{"name":"第二组 (3-2-2 分布 / 一区侧重)","hitCount":3,"hits":[5,8,24]}],"blueHits":[{"name":"第一组 (2-3-2 分布 / 二区侧重)","hit":0},{"name":"第二组 (3-2-2 分布 / 一区侧重)","hit":0}],"bestRedHits":4,"bestBlueHit":0}};
+}
+
+function pad(n, len) { return String(n).padStart(len || 2, '0'); }
+function heatClass(cnt) {
+  if (cnt >= 6) return 'heat-5';
+  if (cnt >= 4) return 'heat-4';
+  if (cnt >= 3) return 'heat-3';
+  if (cnt >= 2) return 'heat-2';
+  if (cnt >= 1) return 'heat-1';
+  return 'heat-0';
+}
+
+// ====== 渲染 ======
+async function render() {
+  const data = await loadData();
+  if (!data) {
+    document.getElementById('app').innerHTML = '<div style="text-align:center;padding:60px;color:#e74c3c;">❌ 数据加载失败，请确认已运行 fetch_and_analyze.js 生成数据</div>';
+    return;
+  }
+
+  document.getElementById('headerMeta').textContent =
+    `📅 数据更新: ${new Date(data.generatedAt).toLocaleString('zh-CN')}  |  ${data.dataRange.totalDraws} 期数据 (第 ${data.dataRange.earliestIssue} ~ ${data.dataRange.latestIssue} 期)`;
+  document.getElementById('headerRight').innerHTML =
+    `最新开奖: <b>第 ${data.latestDraw.code} 期</b><br>${data.latestDraw.date}`;
+
+  let html = '';
+
+  // ========== 第一行: 最新开奖 + 统计摘要 + 连号率 ==========
+  html += '<div class="row row-4">';
+
+  // 最新开奖
+  html += '<div class="card">';
+  html += '<h3>📅 最新开奖</h3>';
+  html += `<div style="text-align:center;margin-bottom:8px;font-weight:bold;">第 ${data.latestDraw.code} 期</div>`;
+  html += `<div style="text-align:center;">${data.latestDraw.date}</div>`;
+  html += '<div style="text-align:center;margin:10px 0;">';
+  html += data.latestDraw.reds.map(n => `<span class="ball red">${pad(n)}</span>`).join('');
+  html += `<span class="ball blue">${pad(data.latestDraw.blue)}</span>`;
+  html += '</div></div>';
+
+  // 统计摘要
+  html += '<div class="card">';
+  html += '<h3>📊 统计摘要</h3>';
+  html += '<div class="stat-grid">';
+  html += `<div class="stat-item"><div class="stat-value red">${data.dataRange.totalDraws}</div><div class="stat-label">总期数</div></div>`;
+  html += `<div class="stat-item"><div class="stat-value blue">${Object.values(data.redFrequency).filter(c => c >= 5).length}</div><div class="stat-label">🔥 红球热号 (>=5次)</div></div>`;
+  html += `<div class="stat-item"><div class="stat-value" style="color:#f39c12;">${Object.values(data.blueFrequency).filter(c => c >= 3).length}</div><div class="stat-label">🔥 蓝球热号 (>=3次)</div></div>`;
+  html += `<div class="stat-item"><div class="stat-value gold">${(data.fullCoverageRate * 100).toFixed(0)}%</div><div class="stat-label">三区全覆盖率</div></div>`;
+  html += '</div></div>';
+
+  // 连号率
+  html += '<div class="card">';
+  html += '<h3>🔗 连号率</h3>';
+  html += '<div style="text-align:center;padding:20px;">';
+  html += `<div style="font-size:2em;font-weight:bold;color:${data.consecutiveRate >= 0.6 ? '#e74c3c' : '#f39c12'};">${(data.consecutiveRate * 100).toFixed(0)}%</div>`;
+  html += '<div style="color:#888;font-size:0.85em;">近30期含连号比例</div></div>';
+  html += '</div>';
+
+  // 蓝球热号排行
+  html += '<div class="card">';
+  html += '<h3>🔵 蓝球热号 Top 6</h3>';
+  html += '<div style="text-align:center;">';
+  for (let i = 0; i < Math.min(6, data.blueRanking.length); i++) {
+    const b = data.blueRanking[i];
+    html += `<span class="ball blue small">${b.num}</span><span class="tag ${b.label.toLowerCase()}">${b.label}</span><small style="color:#888;margin-right:6px;">${b.count}次</small>`;
+  }
+  html += '</div></div>';
+
+  html += '</div>'; // end row-4
+
+  // ========== 第二行: 图表行 ==========
+  html += '<div class="row row-3">';
+
+  // 三区分布堆叠柱状图
+  html += '<div class="card">';
+  html += '<h3>📊 三区分布趋势 (近30期)</h3>';
+  html += '<canvas id="zoneChart"></canvas>';
+  html += '</div>';
+
+  // 蓝球频次
+  html += '<div class="card">';
+  html += '<h3>🔵 蓝球频次图</h3>';
+  html += '<canvas id="blueChart"></canvas>';
+  html += '</div>';
+
+  // 红球热号排行
+  html += '<div class="card">';
+  html += '<h3>🔥 红球热号 Top 10</h3>';
+  html += '<canvas id="redRankChart"></canvas>';
+  html += '</div>';
+
+  html += '</div>'; // end row-3
+
+  // ========== 第三行: 推荐 + 复盘 ==========
+  html += '<div class="row row-2">';
+
+  // 本期推荐
+  html += '<div class="card">';
+  html += '<h3>🎯 本期选号推荐</h3>';
+  if (data.latestPrediction && data.latestPrediction.groups) {
+    for (const g of data.latestPrediction.groups) {
+      html += '<div class="pred-group">';
+      html += `<h4>${g.name}</h4>`;
+      html += '<div style="margin:6px 0;">';
+      html += '<span style="color:#C30D23;font-weight:bold;">红球: </span>';
+      html += g.reds.map(n => `<span class="ball red small">${pad(n)}</span>`).join('');
+      html += '</div>';
+      html += '<div style="margin:6px 0;">';
+      html += '<span style="color:#1565C0;font-weight:bold;">蓝球: </span>';
+      html += g.blues.map(n => `<span class="ball blue small">${pad(n)}</span>`).join('');
+      html += '</div>';
+      html += `<div class="pred-detail">📐 ${g.distribution}  |  🔗 ${(g.consecutivePairs||[]).map(p=>pad(p[0])+'-'+pad(p[1])).join(', ')||'--'}  |  🌡 H${g.hotCount}-W${g.warmCount}-C${g.coldCount}</div>`;
+      html += '</div>';
+    }
+  } else {
+    html += '<div style="text-align:center;color:#999;padding:20px;">暂无推荐数据</div>';
+  }
+  html += '</div>';
+
+  // 复盘对比
+  html += '<div class="card">';
+  html += '<h3>📋 上期复盘</h3>';
+  if (data.review) {
+    const r = data.review;
+    html += `<div style="margin-bottom:8px;font-size:0.85em;">预测 ${r.predictedForIssue} → 实际 ${r.actualIssue}</div>`;
+    html += '<div style="font-size:0.85em;margin-bottom:4px;">实际开奖:</div>';
+    html += '<div style="margin-bottom:8px;">';
+    html += r.actualReds.map(n => `<span class="ball red small">${pad(n)}</span>`).join('');
+    html += `<span class="ball blue small">${pad(r.actualBlue)}</span>`;
+    html += '</div>';
+    html += '<div style="font-weight:bold;margin-bottom:8px;">红球命中率:</div>';
+    const pct = Math.round(r.bestRedHits / 7 * 100);
+    html += `<div class="review-bar"><span style="font-size:0.8em;">最佳 ${r.bestRedHits}/7</span>`;
+    html += `<div class="bar-bg"><div class="bar-fill ${pct >= 40 ? 'good' : pct >= 20 ? 'ok' : 'bad'}" style="width:${pct}%"></div></div>`;
+    html += `<span style="font-size:0.8em;font-weight:bold;color:${pct >= 40 ? '#4caf50' : pct >= 20 ? '#f39c12' : '#e74c3c'};">${pct}%</span></div>`;
+    html += `<div style="font-weight:bold;margin-top:8px;">蓝球: <span style="color:${r.bestBlueHit ? '#4caf50' : '#e74c3c'};">${r.bestBlueHit ? '✅ 命中' : '❌ 未中'}</span></div>`;
+
+    if (r.redHits) {
+      for (const g of r.redHits) {
+        html += `<div style="font-size:0.8em;margin-top:4px;color:#777;">${g.name}: 红 ${g.hitCount}/7${g.hits.length ? ' ('+g.hits.map(n => pad(n)).join(',')+')' : ''}</div>`;
+      }
+    }
+  } else {
+    html += '<div style="text-align:center;color:#999;padding:20px;">暂无复盘数据<br><small>首次运行或缺少对比数据</small></div>';
+  }
+  html += '</div>';
+
+  html += '</div>'; // end row-2
+
+  // ========== 第四行: 红球热力图 + 蓝球热力分布 ==========
+  html += '<div class="row row-2-1">';
+
+  // 红球频次热力图
+  html += '<div class="card">';
+  html += '<h3>🔴 红球频次热力图 (全 33 码)</h3>';
+  html += '<div style="text-align:center;line-height:2.2;">';
+  html += '<div style="margin-bottom:4px;font-size:0.78em;color:#888;">一区 (01-10)</div>';
+  for (let n = 1; n <= 10; n++) {
+    const cnt = data.redFrequency[String(n)] || 0;
+    html += `<span class="heat-cell ${heatClass(cnt)}">${pad(n)}<small>(${cnt})</small></span>`;
+  }
+  html += '<div style="margin:8px 0 4px;font-size:0.78em;color:#888;">二区 (11-20)</div>';
+  for (let n = 11; n <= 20; n++) {
+    const cnt = data.redFrequency[String(n)] || 0;
+    html += `<span class="heat-cell ${heatClass(cnt)}">${pad(n)}<small>(${cnt})</small></span>`;
+  }
+  html += '<div style="margin:8px 0 4px;font-size:0.78em;color:#888;">三区 (21-33)</div>';
+  for (let n = 21; n <= 33; n++) {
+    const cnt = data.redFrequency[String(n)] || 0;
+    html += `<span class="heat-cell ${heatClass(cnt)}">${pad(n)}<small>(${cnt})</small></span>`;
+  }
+  html += '</div>';
+  html += '<div style="text-align:center;margin-top:8px;font-size:0.75em;color:#999;">';
+  html += '<span class="heat-cell heat-5">5+</span> 6+次  ';
+  html += '<span class="heat-cell heat-4">4</span> 4-5次  ';
+  html += '<span class="heat-cell heat-3">3</span> 3次  ';
+  html += '<span class="heat-cell heat-2">2</span> 2次  ';
+  html += '<span class="heat-cell heat-1">1</span> 1次  ';
+  html += '<span class="heat-cell heat-0">0</span> 0次</div>';
+  html += '</div>';
+
+  // 各区分级详情
+  html += '<div class="card">';
+  html += '<h3>📍 各区冷热详情</h3>';
+  for (const [zk, zs] of Object.entries(data.zoneStats)) {
+    html += `<div style="margin-bottom:10px;"><b>${zs.name}</b></div>`;
+    if (zs.hot.length) html += `<div style="font-size:0.8em;margin:2px 0;">🔥 热号: ${zs.hot.join(' ')}</div>`;
+    if (zs.warm.length) html += `<div style="font-size:0.8em;margin:2px 0;">● 温号: ${zs.warm.join(' ')}</div>`;
+    if (zs.cold.length) html += `<div style="font-size:0.8em;margin:2px 0;">❄ 冷号: ${zs.cold.join(' ')}</div>`;
+    if (zs.ice.length) html += `<div style="font-size:0.8em;margin:2px 0;">🧊 冰号: ${zs.ice.join(' ')}</div>`;
+    html += '<hr style="border-color:#f0f0f0;margin:6px 0;">';
+  }
+  html += '</div>';
+
+  html += '</div>'; // end row-2-1
+
+  // ========== 第五行: 历史开奖表格 ==========
+  html += '<div class="card">';
+  html += '<h3>📜 近期开奖记录 (最近 20 期)</h3>';
+  html += '<div style="overflow-x:auto;">';
+  html += '<table><thead><tr>';
+  html += '<th>期号</th><th>日期</th><th>红球</th><th>蓝球</th><th>一区</th><th>二区</th><th>三区</th><th>连号</th><th>全覆</th>';
+  html += '</tr></thead><tbody id="drawTableBody">';
+
+  const zoneDist = data.zoneDistribution;
+  const consTrend = {};
+  for (const c of data.consecutiveTrend) consTrend[c.code] = c;
+
+  html += '</tbody></table></div>';
+  html += '</div>';
+
+  document.getElementById('app').innerHTML = html;
+
+  // ====== 渲染开奖记录表 ======
+  renderDrawTable(data);
+
+  // ====== 绘制图表 ======
+  renderCharts(data);
+}
+
+// ====== 开奖记录表 ======
+function renderDrawTable(data) {
+  // 从 zoneDistribution 获取逐期数据（已含 reds/blue 明细，倒序）
+  const rowData = data.zoneDistribution.slice(0, 20);
+
+  // 构建连号映射
+  const consMap = {};
+  for (const c of data.consecutiveTrend) consMap[c.code] = c;
+
+  let rows = '';
+  for (const d of rowData) {
+    const cons = consMap[d.code];
+    const consStr = cons && cons.count > 0 ? cons.pairs.join(',') : '--';
+    const fullIcon = d.full ? '✅' : '⚠️';
+
+    const redBalls = (d.reds || []).map(n => `<span class="ball red small">${pad(n)}</span>`).join('');
+    const blueBall = d.blue != null ? `<span class="ball blue small">${pad(d.blue)}</span>` : '--';
+
+    rows += '<tr>';
+    rows += `<td><b>${d.code}</b></td>`;
+    rows += `<td style="font-size:0.78em;">${d.date}</td>`;
+    rows += `<td style="white-space:nowrap;">${redBalls || '--'}</td>`;
+    rows += `<td>${blueBall}</td>`;
+    rows += `<td>${d.Z1}</td>`;
+    rows += `<td>${d.Z2}</td>`;
+    rows += `<td>${d.Z3}</td>`;
+    rows += `<td style="font-size:0.78em;">${consStr}</td>`;
+    rows += `<td>${fullIcon}</td>`;
+    rows += '</tr>';
+  }
+
+  // 替换表格体
+  const tbody = document.getElementById('drawTableBody');
+  if (tbody) tbody.innerHTML = rows;
+}
+
+// ====== 图表渲染 ======
+function renderCharts(data) {
+  // Chart.js 全局配色
+  Chart.defaults.color = '#666';
+  Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif";
+
+  // 三区分布堆叠柱状图
+  const zoneCtx = document.getElementById('zoneChart');
+  if (zoneCtx) {
+    const zoneData = data.zoneDistribution.slice(0, 20).reverse();
+    new Chart(zoneCtx, {
+      type: 'bar',
+      data: {
+        labels: zoneData.map(d => d.code.slice(-3)),
+        datasets: [
+          { label: '一区(01-10)', data: zoneData.map(d => d.Z1), backgroundColor: '#C30D23' },
+          { label: '二区(11-20)', data: zoneData.map(d => d.Z2), backgroundColor: '#f39c12' },
+          { label: '三区(21-33)', data: zoneData.map(d => d.Z3), backgroundColor: '#1565C0' }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { x: { stacked: true }, y: { stacked: true, max: 7 } },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10, font: { size: 10 } } } }
+      }
+    });
+  }
+
+  // 蓝球频次图
+  const blueCtx = document.getElementById('blueChart');
+  if (blueCtx) {
+    const blueLabels = [], blueValues = [], blueColors = [];
+    for (let n = 1; n <= 16; n++) {
+      const cnt = data.blueFrequency[String(n)] || 0;
+      blueLabels.push(pad(n));
+      blueValues.push(cnt);
+      if (cnt >= 3) blueColors.push('#C30D23');
+      else if (cnt >= 2) blueColors.push('#f39c12');
+      else if (cnt >= 1) blueColors.push('#3498db');
+      else blueColors.push('#bdc3c7');
+    }
+    new Chart(blueCtx, {
+      type: 'bar',
+      data: { labels: blueLabels, datasets: [{ data: blueValues, backgroundColor: blueColors, borderRadius: 4 }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  // 红球热号排行
+  const redCtx = document.getElementById('redRankChart');
+  if (redCtx) {
+    const top10 = data.redRanking.slice(0, 10);
+    const rColors = top10.map(r => r.label === 'HOT' ? '#e74c3c' : r.label === 'WARM' ? '#f39c12' : '#3498db');
+    new Chart(redCtx, {
+      type: 'bar',
+      data: {
+        labels: top10.map(r => r.num),
+        datasets: [{ data: top10.map(r => r.count), backgroundColor: rColors, borderRadius: 4 }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { x: { beginAtZero: true, ticks: { stepSize: 2 } } },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+}
+
+// 启动
+render().catch(e => { document.getElementById('app').innerHTML = `<div style="text-align:center;padding:60px;color:#e74c3c;">❌ 渲染失败: ${e.message}</div>`; console.error(e); });
+</script>
+
+</body>
+</html>

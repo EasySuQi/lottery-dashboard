@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚽ 足彩14场胜负彩分析仪表盘</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --card-bg: #ffffff;
+    --text: #333333;
+    --win: #2e7d32;
+    --draw: #e65100;
+    --lose: #c62828;
+    --gold: #D4A843;
+    --border: #e0e0e0;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); }
+  .header { background: linear-gradient(135deg, #1a237e, #0d47a1); color: #fff; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .header h1 { font-size: 1.5em; }
+  .header .meta { font-size: 0.85em; opacity: 0.85; }
+  .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+  .row { display: grid; gap: 16px; margin-bottom: 16px; }
+  .row-4 { grid-template-columns: repeat(4, 1fr); }
+  .row-3 { grid-template-columns: repeat(3, 1fr); }
+  .row-2 { grid-template-columns: 1fr 1fr; }
+  .row-2-1 { grid-template-columns: 2fr 1fr; }
+  .row-1-2 { grid-template-columns: 1fr 2fr; }
+  @media (max-width: 1200px) { .row-4, .row-3, .row-2, .row-2-1, .row-1-2 { grid-template-columns: 1fr; } }
+  .card { background: var(--card-bg); border-radius: 10px; padding: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+  .card h3 { font-size: 0.95em; margin-bottom: 12px; color: #1a237e; border-bottom: 2px solid #1a237e; padding-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .card-full { grid-column: 1 / -1; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-item { text-align: center; padding: 10px; background: #fafafa; border-radius: 6px; }
+  .stat-value { font-size: 1.6em; font-weight: bold; }
+  .stat-value.win { color: var(--win); }
+  .stat-value.draw { color: var(--draw); }
+  .stat-value.lose { color: var(--lose); }
+  .stat-value.gold { color: #b8860b; }
+  .stat-value.navy { color: #1a237e; }
+  .stat-label { font-size: 0.75em; color: #888; margin-top: 2px; }
+  .difficulty-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 1em; }
+  .diff-1 { background: #e8f5e9; color: #2e7d32; }
+  .diff-2 { background: #fff8e1; color: #f57f17; }
+  .diff-3 { background: #fff3e0; color: #e65100; }
+  .diff-4 { background: #fce4ec; color: #c62828; }
+  .diff-5 { background: #f3e5f5; color: #6a1b9a; }
+
+  /* 赛果矩阵 */
+  .result-grid { display: grid; grid-template-columns: repeat(14, 1fr); gap: 3px; }
+  .result-cell { text-align: center; padding: 6px 2px; border-radius: 4px; font-weight: bold; font-size: 0.8em; }
+  .result-win { background: #c8e6c9; color: #1b5e20; }
+  .result-draw { background: #ffe0b2; color: #e65100; }
+  .result-lose { background: #ffcdd2; color: #b71c1c; }
+  .result-star { background: #e0e0e0; color: #616161; }
+
+  /* 比赛详情表 */
+  .match-table { width: 100%; border-collapse: collapse; font-size: 0.78em; }
+  .match-table th { background: #1a237e; color: #fff; padding: 8px 5px; text-align: center; font-weight: 600; white-space: nowrap; }
+  .match-table td { padding: 6px 5px; text-align: center; border-bottom: 1px solid #eee; }
+  .match-table tr:hover td { background: #f5f5ff; }
+  .match-table .league-tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 0.85em; background: #e8eaf6; color: #1a237e; white-space: nowrap; }
+
+  /* 位置热度 */
+  .heat-cell { display: inline-block; width: 42px; height: 42px; line-height: 42px; text-align: center; margin: 2px; border-radius: 4px; color: #fff; font-weight: bold; font-size: 0.85em; }
+  .heat-0 { background: #e8e8e8; color: #999; }
+  .heat-1 { background: #90caf9; color: #0d47a1; }
+  .heat-2 { background: #42a5f5; color: #fff; }
+  .heat-3 { background: #ff9800; color: #fff; }
+  .heat-4 { background: #ef5350; color: #fff; }
+  .risk-low { background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
+  .risk-medium { background: #fff3e0; color: #e65100; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
+  .risk-high { background: #fce4ec; color: #c62828; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
+  .risk-draw { background: #ffe0b2; color: #bf360c; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+  th { background: #f5f5f5; padding: 8px 6px; text-align: center; font-weight: 600; border-bottom: 2px solid var(--border); white-space: nowrap; }
+  td { padding: 6px; text-align: center; border-bottom: 1px solid #f0f0f0; }
+  tr:hover td { background: #fafafa; }
+
+  .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 0.75em; font-weight: bold; margin-left: 3px; color: #fff; }
+  .tag-hotpot { background: #ff9800; }
+  .tag-cold { background: #2196f3; }
+  .tag-zero { background: #f44336; }
+  .tag-normal { background: #4caf50; }
+
+  .footer { text-align: center; padding: 20px; color: #999; font-size: 0.8em; }
+
+  canvas { max-height: 300px; }
+
+  /* 联赛球队表 */
+  .tab-nav { display: flex; gap: 4px; margin-bottom: 10px; }
+  .tab-btn { padding: 6px 14px; border: 1px solid var(--border); background: #f5f5f5; cursor: pointer; border-radius: 4px 4px 0 0; font-size: 0.85em; }
+  .tab-btn.active { background: #1a237e; color: #fff; border-color: #1a237e; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .win-bar-container { display: flex; align-items: center; gap: 4px; }
+  .win-bar { height: 14px; border-radius: 7px; }
+  .win-bar-home { background: var(--win); }
+  .win-bar-draw { background: var(--draw); }
+  .win-bar-away { background: var(--lose); }
+
+  /* 对Period选择器 */
+  .period-selector { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .period-btn { padding: 4px 10px; border: 1px solid #ccc; background: #fff; cursor: pointer; border-radius: 4px; font-size: 0.8em; }
+  .period-btn.active { background: #1a237e; color: #fff; border-color: #1a237e; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>⚽ 足彩14场胜负彩 分析仪表盘</h1>
+    <div class="meta" id="pageMeta">加载中...</div>
+  </div>
+  <div class="meta" id="updateTime"></div>
+</div>
+
+<div class="container">
+
+  <!-- 未来期次提前评估（置顶） -->
+  <div class="card">
+    <h3>🔮 未来期次提前评估</h3>
+    <div class="period-selector" id="forecastSelector"></div>
+    <div id="forecastDetail"></div>
+  </div>
+
+  <!-- KPI 行 -->
+  <div class="row row-4" id="kpiRow"></div>
+
+  <!-- 难度评估 + 最新赛果 -->
+  <div class="row row-2-1">
+    <div class="card">
+      <h3>📋 最新一期 14场赛果矩阵 <span id="latestIssueTag" style="font-size:0.7em;font-weight:normal;color:#888;"></span></h3>
+      <div id="latestResultMatrix"></div>
+      <div id="latestMatchTable" style="margin-top:12px;"></div>
+    </div>
+    <div class="card">
+      <h3>⚖ 难度综合评估 <span id="diffIssueTag" style="font-size:0.7em;font-weight:normal;color:#888;"></span></h3>
+      <canvas id="difficultyChart"></canvas>
+      <div id="difficultyDetail" style="margin-top:10px; font-size:0.85em;"></div>
+    </div>
+  </div>
+
+  <!-- 胜平负趋势 + 位置热度 -->
+  <div class="row row-2">
+    <div class="card">
+      <h3>📈 胜平负分布趋势 (近20期)</h3>
+      <canvas id="distributionChart"></canvas>
+    </div>
+    <div class="card">
+      <h3>🔥 14位置热度矩阵</h3>
+      <div id="positionHeatTable"></div>
+    </div>
+  </div>
+
+  <!-- 奖金走势 -->
+  <div class="row row-2">
+    <div class="card">
+      <h3>💰 一等奖奖金 & 注数走势</h3>
+      <canvas id="prizeChart"></canvas>
+    </div>
+    <div class="card">
+      <h3>🏷 奖金类型分布</h3>
+      <canvas id="prizeTypeChart"></canvas>
+      <div id="prizeTypeSummary" style="margin-top:10px; font-size:0.85em;"></div>
+    </div>
+  </div>
+
+  <!-- 奖金详情表 -->
+  <div class="card">
+    <h3>📊 近20期奖金详情表</h3>
+    <div style="overflow-x:auto;" id="prizeDetailTable"></div>
+  </div>
+
+  <!-- 往期评估记录 -->
+  <div class="card">
+    <h3>🗂 往期评估记录</h3>
+    <div class="period-selector" id="historySelector"></div>
+    <div id="historyEvaluationDetail"></div>
+  </div>
+
+  <!-- 评估 vs 真实赛果比对 -->
+  <div class="card">
+    <h3>📊 评估 vs 真实赛果比对</h3>
+    <div id="comparisonSummary"></div>
+    <div class="period-selector" id="comparisonSelector"></div>
+    <div style="overflow-x:auto;" id="comparisonTable"></div>
+  </div>
+
+  <!-- 回溯分析总览 KPI -->
+  <div class="row row-4" id="backfillKpiRow"></div>
+
+  <!-- 回溯分析：难度走势 + 风险位置热度 -->
+  <div class="row row-2">
+    <div class="card">
+      <h3>📈 难度走势（回溯全期）</h3>
+      <canvas id="backfillDifficultyChart"></canvas>
+    </div>
+    <div class="card">
+      <h3>🎯 风险位置热度（回溯全期）</h3>
+      <div id="backfillRiskPos"></div>
+    </div>
+  </div>
+
+  <!-- 回溯分析：联赛风险榜 + 关键相关性 -->
+  <div class="row row-2">
+    <div class="card">
+      <h3>⚽ 联赛风险榜（回溯全期）</h3>
+      <div id="backfillLeagueRisk"></div>
+    </div>
+    <div class="card">
+      <h3>🔗 关键相关性</h3>
+      <div id="backfillCorrelation"></div>
+    </div>
+  </div>
+
+  <!-- 比赛详情表（按期查询） -->
+  <div class="card">
+    <h3>🏟 每期比赛详情表</h3>
+    <div class="period-selector" id="periodSelector"></div>
+    <div style="overflow-x:auto;" id="periodMatchDetail"></div>
+  </div>
+
+  <!-- 联赛 & 球队统计 -->
+  <div class="card">
+    <h3>⚽ 联赛 & 球队统计</h3>
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('league')">联赛统计</button>
+      <button class="tab-btn" onclick="switchTab('team')">球队统计</button>
+    </div>
+    <div class="tab-panel active" id="tabLeague">
+      <div style="overflow-x:auto;" id="leagueTable"></div>
+    </div>
+    <div class="tab-panel" id="tabTeam">
+      <div style="overflow-x:auto;" id="teamTable"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>⚽ 足彩14场胜负彩历史数据统计仪表盘 | 数据源：国家体育总局体育彩票管理中心 sporttery.cn</p>
+  <p>⚠️ 以上为历史统计推演，不构成投注建议。足球赛果为独立事件。请理性购彩，量力而行。</p>
+  <p>Generated by 体彩14场-agent · <span id="genTime"></span></p>
+</div>
+
+<script>
+// ====== 数据加载 ======
+async function loadData() {
+  // 数据已内嵌（由 build_site.js 生成）
+  return {"generatedAt":"2026-08-16T09:24:21.927Z","gameType":"足彩14场胜负彩","dataRange":{"totalDraws":35,"windowSize":20,"earliestIssue":"26071","latestIssue":"26105","latestDate":"2026-08-16"},"latestDraw":{"code":"26105","results":[0,3,0,0,1,3,3,0,0,0,3,1,0,0],"date":"2026-08-16","totalSale":11664888,"prize1Count":49,"prize1Amount":106650,"prize2Count":1,"prize2Amount":1852,"matches":[{"matchNum":1,"league":"英冠","home":"布里斯","away":"米尔沃","result":"0","score":"0:2","startTime":"2026-08-15"},{"matchNum":2,"league":"英冠","home":"米德尔","away":"林肯城","result":"3","score":"2:1","startTime":"2026-08-15"},{"matchNum":3,"league":"英冠","home":"诺维奇","away":"西布罗","result":"0","score":"1:2","startTime":"2026-08-15"},{"matchNum":4,"league":"英冠","home":"斯托克","away":"斯旺西","result":"0","score":"1:2","startTime":"2026-08-15"},{"matchNum":5,"league":"英冠","home":"谢菲联","away":"伯明翰","result":"1","score":"0:0","startTime":"2026-08-16"},{"matchNum":6,"league":"西甲","home":"阿拉维","away":"赫塔费","result":"3","score":"3:0","startTime":"2026-08-16"},{"matchNum":7,"league":"西甲","home":"塞维利","away":"巴列卡","result":"3","score":"2:1","startTime":"2026-08-16"},{"matchNum":8,"league":"荷甲","home":"威  廉","away":"奈梅亨","result":"0","score":"1:4","startTime":"2026-08-15"},{"matchNum":9,"league":"荷甲","home":"乌德勒","away":"阿尔克","result":"0","score":"1:4","startTime":"2026-08-16"},{"matchNum":10,"league":"荷甲","home":"精  英","away":"埃因霍","result":"0","score":"1:2","startTime":"2026-08-16"},{"matchNum":11,"league":"荷甲","home":"福图纳","away":"坎布尔","result":"3","score":"3:1","startTime":"2026-08-16"},{"matchNum":12,"league":"葡超","home":"阿维卡","away":"阿马多","result":"1","score":"2:2","startTime":"2026-08-15"},{"matchNum":13,"league":"葡超","home":"维塞乌","away":"圣克拉","result":"0","score":"0:1","startTime":"2026-08-16"},{"matchNum":14,"league":"葡超","home":"里奥阿","away":"波尔图","result":"0","score":"0:2","startTime":"2026-08-16"}]},"distributionTrend":[{"code":"26105","date":"2026-08-16","win":4,"draw":2,"lose":8,"winPct":28.57142857142857,"drawPct":14.285714285714285,"losePct":57.14285714285714,"anomalies":["主胜偏少","客胜偏多"]},{"code":"26104","date":"2026-08-15","win":6,"draw":4,"lose":4,"winPct":42.857142857142854,"drawPct":28.57142857142857,"losePct":28.57142857142857,"anomalies":[]},{"code":"26103","date":"2026-08-14","win":7,"draw":5,"lose":2,"winPct":50,"drawPct":35.714285714285715,"losePct":14.285714285714285,"anomalies":["客胜偏少"]},{"code":"26102","date":"2026-08-10","win":6,"draw":4,"lose":4,"winPct":42.857142857142854,"drawPct":28.57142857142857,"losePct":28.57142857142857,"anomalies":[]},{"code":"26101","date":"2026-08-09","win":5,"draw":2,"lose":7,"winPct":35.714285714285715,"drawPct":14.285714285714285,"losePct":50,"anomalies":["客胜偏多"]},{"code":"26100","date":"2026-08-07","win":9,"draw":3,"lose":2,"winPct":64.28571428571429,"drawPct":21.428571428571427,"losePct":14.285714285714285,"anomalies":["主胜偏多","客胜偏少"]},{"code":"26099","date":"2026-08-04","win":7,"draw":2,"lose":5,"winPct":50,"drawPct":14.285714285714285,"losePct":35.714285714285715,"anomalies":[]},{"code":"26098","date":"2026-08-02","win":4,"draw":8,"lose":2,"winPct":28.57142857142857,"drawPct":57.14285714285714,"losePct":14.285714285714285,"anomalies":["主胜偏少","平局偏多","客胜偏少"]},{"code":"26097","date":"2026-07-31","win":5,"draw":4,"lose":5,"winPct":35.714285714285715,"drawPct":28.57142857142857,"losePct":35.714285714285715,"anomalies":[]},{"code":"26096","date":"2026-07-27","win":4,"draw":5,"lose":5,"winPct":28.57142857142857,"drawPct":35.714285714285715,"losePct":35.714285714285715,"anomalies":["主胜偏少"]},{"code":"26095","date":"2026-07-26","win":6,"draw":5,"lose":3,"winPct":42.857142857142854,"drawPct":35.714285714285715,"losePct":21.428571428571427,"anomalies":[]},{"code":"26094","date":"2026-07-24","win":6,"draw":3,"lose":5,"winPct":42.857142857142854,"drawPct":21.428571428571427,"losePct":35.714285714285715,"anomalies":[]},{"code":"26093","date":"2026-07-21","win":3,"draw":4,"lose":7,"winPct":21.428571428571427,"drawPct":28.57142857142857,"losePct":50,"anomalies":["主胜偏少","客胜偏多"]},{"code":"26092","date":"2026-07-21","win":5,"draw":2,"lose":6,"winPct":35.714285714285715,"drawPct":14.285714285714285,"losePct":42.857142857142854,"anomalies":["延期1场"]},{"code":"26091","date":"2026-07-13","win":7,"draw":4,"lose":3,"winPct":50,"drawPct":28.57142857142857,"losePct":21.428571428571427,"anomalies":[]},{"code":"26090","date":"2026-07-08","win":3,"draw":2,"lose":9,"winPct":21.428571428571427,"drawPct":14.285714285714285,"losePct":64.28571428571429,"anomalies":["主胜偏少","客胜偏多"]},{"code":"26089","date":"2026-07-04","win":9,"draw":4,"lose":1,"winPct":64.28571428571429,"drawPct":28.57142857142857,"losePct":7.142857142857142,"anomalies":["主胜偏多","客胜偏少"]},{"code":"26088","date":"2026-06-28","win":5,"draw":2,"lose":7,"winPct":35.714285714285715,"drawPct":14.285714285714285,"losePct":50,"anomalies":["客胜偏多"]},{"code":"26087","date":"2026-06-24","win":8,"draw":2,"lose":4,"winPct":57.14285714285714,"drawPct":14.285714285714285,"losePct":28.57142857142857,"anomalies":[]},{"code":"26086","date":"2026-06-20","win":8,"draw":2,"lose":4,"winPct":57.14285714285714,"drawPct":14.285714285714285,"losePct":28.57142857142857,"anomalies":[]}],"prizeTrend":[{"code":"26105","date":"2026-08-16","prize1Count":49,"prize1Amount":106650,"prize2Amount":1852,"totalSale":11664888,"type":"●正常"},{"code":"26104","date":"2026-08-15","prize1Count":11,"prize1Amount":460367,"prize2Amount":9080,"totalSale":11303678,"type":"●正常"},{"code":"26103","date":"2026-08-14","prize1Count":5,"prize1Amount":1270577,"prize2Amount":15382,"totalSale":14180550,"type":"🧊冷门期"},{"code":"26102","date":"2026-08-10","prize1Count":2,"prize1Amount":4567569,"prize2Amount":48401,"totalSale":15377644,"type":"🧊冷门期"},{"code":"26101","date":"2026-08-09","prize1Count":1,"prize1Amount":5000000,"prize2Amount":103513,"totalSale":16174004,"type":"🧊冷门期"},{"code":"26100","date":"2026-08-07","prize1Count":10,"prize1Amount":621573,"prize2Amount":11335,"totalSale":13874410,"type":"●正常"},{"code":"26099","date":"2026-08-04","prize1Count":9,"prize1Amount":620336,"prize2Amount":7845,"totalSale":12462112,"type":"●正常"},{"code":"26098","date":"2026-08-02","prize1Count":3,"prize1Amount":1945348,"prize2Amount":27186,"totalSale":13026884,"type":"🧊冷门期"},{"code":"26097","date":"2026-07-31","prize1Count":7,"prize1Amount":2277744,"prize2Amount":20547,"totalSale":19156054,"type":"●正常"},{"code":"26096","date":"2026-07-27","prize1Count":0,"prize1Amount":0,"prize2Amount":280225,"totalSale":16054572,"type":"🥶无人中"},{"code":"26095","date":"2026-07-26","prize1Count":1,"prize1Amount":5000000,"prize2Amount":138478,"totalSale":11539852,"type":"🧊冷门期"},{"code":"26094","date":"2026-07-24","prize1Count":2,"prize1Amount":2859355,"prize2Amount":23794,"totalSale":12764978,"type":"🧊冷门期"},{"code":"26093","date":"2026-07-21","prize1Count":10,"prize1Amount":645797,"prize2Amount":9446,"totalSale":14415132,"type":"●正常"},{"code":"26092","date":"2026-07-21","prize1Count":3,"prize1Amount":2105873,"prize2Amount":7458,"totalSale":14101834,"type":"🧊冷门期"},{"code":"26091","date":"2026-07-13","prize1Count":11,"prize1Amount":680188,"prize2Amount":6413,"totalSale":16701056,"type":"●正常"},{"code":"26090","date":"2026-07-08","prize1Count":60,"prize1Amount":110322,"prize2Amount":1877,"totalSale":14775290,"type":"●正常"},{"code":"26089","date":"2026-07-04","prize1Count":500,"prize1Amount":39882,"prize2Amount":673,"totalSale":44511382,"type":"🍲火锅奖"},{"code":"26088","date":"2026-06-28","prize1Count":149,"prize1Amount":123220,"prize2Amount":1687,"totalSale":40981662,"type":"●正常"},{"code":"26087","date":"2026-06-24","prize1Count":7,"prize1Amount":2988,"prize2Amount":76,"totalSale":49284574,"type":"●正常"},{"code":"26086","date":"2026-06-20","prize1Count":613,"prize1Amount":67811,"prize2Amount":532,"totalSale":50704222,"type":"🍲火锅奖"}],"positionHeat":[{"position":1,"winPct":40,"drawPct":15,"losePct":45,"maxKey":"lose","maxVal":9,"ent":0.9197173235750932,"risk":"medium","riskLabel":"🟡中","latestMatch":{"league":"英冠","home":"布里斯","away":"米尔沃"}},{"position":2,"winPct":40,"drawPct":15,"losePct":45,"maxKey":"lose","maxVal":9,"ent":0.9197173235750932,"risk":"medium","riskLabel":"🟡中","latestMatch":{"league":"英冠","home":"米德尔","away":"林肯城"}},{"position":3,"winPct":30,"drawPct":25,"losePct":45,"maxKey":"lose","maxVal":9,"ent":0.9713107216099232,"risk":"high","riskLabel":"🔴高","latestMatch":{"league":"英冠","home":"诺维奇","away":"西布罗"}},{"position":4,"winPct":30,"drawPct":30,"losePct":40,"maxKey":"lose","maxVal":8,"ent":0.9911594714322188,"risk":"high","riskLabel":"🔴高","latestMatch":{"league":"英冠","home":"斯托克","away":"斯旺西"}},{"position":5,"winPct":45,"drawPct":15,"losePct":40,"maxKey":"win","maxVal":9,"ent":0.9197173235750932,"risk":"medium","riskLabel":"🟡中","latestMatch":{"league":"英冠","home":"谢菲联","away":"伯明翰"}},{"position":6,"winPct":30,"drawPct":25,"losePct":45,"maxKey":"lose","maxVal":9,"ent":0.9713107216099232,"risk":"high","riskLabel":"🔴高","latestMatch":{"league":"西甲","home":"阿拉维","away":"赫塔费"}},{"position":7,"winPct":60,"drawPct":25,"losePct":15,"maxKey":"win","maxVal":12,"ent":0.8534739433956114,"risk":"medium_draw","riskLabel":"⚠平局陷阱","latestMatch":{"league":"西甲","home":"塞维利","away":"巴列卡"}},{"position":8,"winPct":55.00000000000001,"drawPct":35,"losePct":10,"maxKey":"win","maxVal":11,"ent":0.8433426540429226,"risk":"medium_draw","riskLabel":"⚠平局陷阱","latestMatch":{"league":"荷甲","home":"威  廉","away":"奈梅亨"}},{"position":9,"winPct":45,"drawPct":25,"losePct":30,"maxKey":"win","maxVal":9,"ent":0.9713107216099232,"risk":"high","riskLabel":"🔴高","latestMatch":{"league":"荷甲","home":"乌德勒","away":"阿尔克"}},{"position":10,"winPct":45,"drawPct":20,"losePct":35,"maxKey":"win","maxVal":9,"ent":0.9545258142257613,"risk":"medium","riskLabel":"🟡中","latestMatch":{"league":"荷甲","home":"精  英","away":"埃因霍"}},{"position":11,"winPct":55.00000000000001,"drawPct":20,"losePct":25,"maxKey":"win","maxVal":11,"ent":0.9077556599985014,"risk":"medium","riskLabel":"🟡中","latestMatch":{"league":"荷甲","home":"福图纳","away":"坎布尔"}},{"position":12,"winPct":47.368421052631575,"drawPct":31.57894736842105,"losePct":21.052631578947366,"maxKey":"win","maxVal":9,"ent":0.9520903566147751,"risk":"medium_draw","riskLabel":"⚠平局陷阱","latestMatch":{"league":"葡超","home":"阿维卡","away":"阿马多"}},{"position":13,"winPct":25,"drawPct":45,"losePct":30,"maxKey":"draw","maxVal":9,"ent":0.9713107216099232,"risk":"high","riskLabel":"🔴高","latestMatch":{"league":"葡超","home":"维塞乌","away":"圣克拉"}},{"position":14,"winPct":40,"drawPct":20,"losePct":40,"maxKey":"win","maxVal":8,"ent":0.9602297178607614,"risk":"medium","riskLabel":"🟡中","latestMatch":{"league":"葡超","home":"里奥阿","away":"波尔图"}}],"difficulty":{"drawScore":6.160714285714287,"cvScore":5.5766955432959575,"hitScore":3.776991252054863,"entScore":9.36212319623966,"totalScore":6.0590606237999225,"level":4,"levelLabel":"🔴 中高","avgDrawRate":0.2464285714285715,"avgEnt":0.9362123196239659,"history":[{"date":"2026-08-16T09:24:21.926Z","totalScore":6.0590606237999225,"level":4,"levelLabel":"🔴 中高","avgDrawRate":0.2464285714285715,"prizeCV":1.1153391086591915}]},"summary":{"hotpotCount":2,"coldCount":8,"zeroCount":1,"totalPeriods":35,"avgWin":5.85,"avgDraw":3.45,"avgLose":4.65,"prizeCV":1.1153391086591915,"avgPrize1Amount":1500294.7368421052},"recentMatches":{"26101":{"date":"2026-08-09","totalSale":16174004,"prize1Count":1,"prize1Amount":5000000,"prize2Count":30,"prize2Amount":103513,"matches":[{"matchNum":1,"league":"英联赛杯","home":"斯旺西","away":"伯明翰","result":0,"resultLabel":"客胜","score":"0:1","startTime":"2026-08-08"},{"matchNum":2,"league":"英联赛杯","home":"西汉姆","away":"朴次茅","result":3,"resultLabel":"主胜","score":"3:1","startTime":"2026-08-08"},{"matchNum":3,"league":"英联赛杯","home":"德比郡","away":"林肯城","result":0,"resultLabel":"客胜","score":"1:2","startTime":"2026-08-08"},{"matchNum":4,"league":"荷甲","home":"奈梅亨","away":"特尔斯","result":0,"resultLabel":"客胜","score":"1:2","startTime":"2026-08-08"},{"matchNum":5,"league":"荷甲","home":"前进鹰","away":"威  廉","result":3,"resultLabel":"主胜","score":"4:1","startTime":"2026-08-09"},{"matchNum":6,"league":"荷甲","home":"埃因霍","away":"福图纳","result":1,"resultLabel":"平局","score":"2:2","startTime":"2026-08-09"},{"matchNum":7,"league":"荷甲","home":"阿尔克","away":"海  牙","result":3,"resultLabel":"主胜","score":"2:0","startTime":"2026-08-09"},{"matchNum":8,"league":"葡超","home":"马里迪","away":"卡  萨","result":3,"resultLabel":"主胜","score":"1:0","startTime":"2026-08-08"},{"matchNum":9,"league":"葡超","home":"吉马良","away":"阿罗卡","result":0,"resultLabel":"客胜","score":"0:1","startTime":"2026-08-09"},{"matchNum":10,"league":"葡超","home":"阿马多","away":"里斯本","result":1,"resultLabel":"平局","score":"2:2","startTime":"2026-08-09"},{"matchNum":11,"league":"瑞超","home":"米亚尔","away":"埃尔夫","result":0,"resultLabel":"客胜","score":"0:1","startTime":"2026-08-08"},{"matchNum":12,"league":"挪超","home":"维  京","away":"萨  堡","result":3,"resultLabel":"主胜","score":"2:1","startTime":"2026-08-08"},{"matchNum":13,"league":"挪超","home":"斯  达","away":"腓特烈","result":0,"resultLabel":"客胜","score":"0:1","startTime":"2026-08-09"},{"matchNum":14,"league":"芬超","home":"雅  罗","away":"瓦  萨","result":0,"resultLabel":"客胜","score":"1:3","startTime":"2026-08-09"}]},"26102":{"date":"2026-08-10","totalSale":15377644,"prize1Count":2,"prize1Amount":4567569,"prize2Count":61,"prize2Amount":48401,"matches":[{"matchNum":1,"league":"荷甲","home":"格罗宁","away":"乌德勒","result":3,"resultLabel":"主胜","score":"2:1","startTime":"2026-08-09"},{"matchNum":2,"league":"荷甲","home":"兹沃勒","away":"阿贾克","result":0,"resultLabel":"客胜","score":"0:2","startTime":"2026-08-09"},{"matchNum":3,"league":"荷甲","home":"海伦芬","away":"特温特","result":3,"resultLabel":"主胜","score":"1:0","startTime":"2026-08-09"},{"matchNum":4,"league":"葡超","home":"波尔图","away":"阿维卡","result":3,"resultLabel":"主胜","score":"2:0","startTime":"2026-08-10"},{"matchNum":5,"league":"葡超","home":"本菲卡","away":"维塞乌","result":1,"resultLabel":"平局","score":"2:2","startTime":"2026-08-10"},{"matchNum":6,"league":"葡超","home":"吉维森","away":"里奥阿","result":3,"resultLabel":"主胜","score":"1:0","startTime":"2026-08-10"},{"matchNum":7,"league":"葡超","home":"摩雷伦","away":"布拉加","result":1,"resultLabel":"平局","score":"2:2","startTime":"2026-08-10"},{"matchNum":8,"league":"瑞超","home":"哥德堡","away":"卡尔马","result":3,"resultLabel":"主胜","score":"3:2","startTime":"2026-08-09"},{"matchNum":9,"league":"瑞超","home":"哈尔姆","away":"盖  斯","result":0,"resultLabel":"客胜","score":"0:2","startTime":"2026-08-09"},{"matchNum":10,"league":"挪超","home":"利勒斯","away":"罗森博","result":0,"resultLabel":"客胜","score":"0:2","startTime":"2026-08-09"},{"matchNum":11,"league":"挪超","home":"汉  坎","away":"奥勒松","result":1,"resultLabel":"平局","score":"1:1","startTime":"2026-08-09"},{"matchNum":12,"league":"挪超","home":"克里斯","away":"莫尔德","result":3,"resultLabel":"主胜","score":"2:1","startTime":"2026-08-10"},{"matchNum":13,"league":"芬超","home":"国际图","away":"拉赫蒂","result":1,"resultLabel":"平局","score":"0:0","startTime":"2026-08-09"},{"matchNum":14,"league":"芬超","home":"AC奥卢","away":"赫尔辛","result":0,"resultLabel":"客胜","score":"0:1","startTime":"2026-08-10"}]},"26103":{"date":"2026-08-14","totalSale":14180550,"prize1Count":5,"prize1Amount":1270577,"prize2Count":177,"prize2Amount":15382,"matches":[{"matchNum":1,"league":"欧冠","home":"阿拉木","away":"索斯基","result":0,"resultLabel":"客胜","score":"0:1","startTime":"2026-08-11"},{"matchNum":2,"league":"欧冠","home":"博  德","away":"圣吉联","result":1,"resultLabel":"平局","score":"2:2","startTime":"2026-08-12"},{"matchNum":3,"league":"欧冠","home":"萨巴赫","away":"奥胡斯","result":3,"resultLabel":"主胜","score":"4:0","startTime":"2026-08-12"},{"matchNum":4,"league":"欧冠","home":"奈梅亨","away":"奥林匹","result":1,"resultLabel":"平局","score":"1:1","startTime":"2026-08-12"},{"matchNum":5,"league":"欧冠","home":"布拉迪","away":"米亚尔","result":3,"resultLabel":"主胜","score":"2:0","startTime":"2026-08-12"},{"matchNum":6,"league":"欧冠","home":"格拉茨","away":"费内巴","result":0,"resultLabel":"客胜","score":"0:1","startTime":"2026-08-12"},{"matchNum":7,"league":"欧冠","home":"里  昂","away":"布拉格","result":3,"resultLabel":"主胜","score":"3:0","startTime":"2026-08-12"},{"matchNum":8,"league":"欧罗巴","home":"帕福斯","away":"萨茨堡","result":1,"resultLabel":"平局","score":"3:3","startTime":"2026-08-14"},{"matchNum":9,"league":"欧罗巴","home":"克大学","away":"库奥皮","result":3,"resultLabel":"主胜","score":"2:1","startTime":"2026-08-14"},{"matchNum":10,"league":"欧罗巴","home":"雷维京","away":"图  恩","result":3,"resultLabel":"主胜","score":"3:2","startTime":"2026-08-14"},{"matchNum":11,"league":"欧罗巴","home":"安德莱","away":"塞萨洛","result":3,"resultLabel":"主胜","score":"3:2","startTime":"2026-08-14"},{"matchNum":12,"league":"欧罗巴","home":"流浪者","away":"比亚韦","result":1,"resultLabel":"平局","score":"1:1","startTime":"2026-08-14"},{"matchNum":13,"league":"欧罗巴","home":"哈  茨","away":"本菲卡","result":1,"resultLabel":"平局","score":"1:1","startTime":"2026-08-14"},{"matchNum":14,"league":"欧超杯","home":"日尔曼","away":"维  拉","result":3,"resultLabel":"主胜","score":"2:1","startTime":"2026-08-13"}]},"26104":{"date":"2026-08-15","totalSale":11303678,"prize1Count":11,"prize1Amount":460367,"prize2Count":239,"prize2Amount":9080,"matches":[{"matchNum":1,"league":"英冠","home":"伍尔弗","away":"布莱克","result":1,"resultLabel":"平局","score":"2:2","startTime":"2026-08-15"},{"matchNum":2,"league":"德乙","home":"不伦瑞","away":"波  鸿","result":0,"resultLabel":"客胜","score":"0:1","startTime":"2026-08-15"},{"matchNum":3,"league":"德乙","home":"基  尔","away":"圣保利","result":1,"resultLabel":"平局","score":"2:2","startTime":"2026-08-15"},{"matchNum":4,"league":"法乙","home":"阿纳西","away":"罗德兹","result":3,"resultLabel":"主胜","score":"2:0","startTime":"2026-08-15"},{"matchNum":5,"league":"法乙","home":"南  锡","away":"蒙彼利","result":0,"resultLabel":"客胜","score":"0:1","startTime":"2026-08-15"},{"matchNum":6,"league":"法乙","home":"第  戎","away":"波城FC","result":0,"resultLabel":"客胜","score":"0:1","startTime":"2026-08-15"},{"matchNum":7,"league":"法乙","home":"格勒诺","away":"梅  斯","result":1,"resultLabel":"平局","score":"0:0","startTime":"2026-08-15"},{"matchNum":8,"league":"法乙","home":"甘  冈","away":"布洛涅","result":3,"resultLabel":"主胜","score":"1:0","startTime":"2026-08-15"},{"matchNum":9,"league":"法乙","home":"兰  斯","away":"敦刻克","result":1,"resultLabel":"平局","score":"3:3","startTime":"2026-08-15"},{"matchNum":10,"league":"法乙","home":"埃蒂安","away":"克莱蒙","result":3,"resultLabel":"主胜","score":"3:1","startTime":"2026-08-15"},{"matchNum":11,"league":"荷甲","home":"特尔斯","away":"鹿特丹","result":0,"resultLabel":"客胜","score":"1:3","startTime":"2026-08-15"},{"matchNum":12,"league":"葡超","home":"里斯本","away":"吉马良","result":3,"resultLabel":"主胜","score":"3:2","startTime":"2026-08-15"},{"matchNum":13,"league":"瑞超","home":"埃尔夫","away":"韦斯罗","result":3,"resultLabel":"主胜","score":"3:0","startTime":"2026-08-15"},{"matchNum":14,"league":"挪超","home":"罗森博","away":"维  京","result":3,"resultLabel":"主胜","score":"2:1","startTime":"2026-08-15"}]},"26105":{"date":"2026-08-16","totalSale":11664888,"prize1Count":49,"prize1Amount":106650,"prize2Count":1,"prize2Amount":1852,"matches":[{"matchNum":1,"league":"英冠","home":"布里斯","away":"米尔沃","result":0,"resultLabel":"客胜","score":"0:2","startTime":"2026-08-15"},{"matchNum":2,"league":"英冠","home":"米德尔","away":"林肯城","result":3,"resultLabel":"主胜","score":"2:1","startTime":"2026-08-15"},{"matchNum":3,"league":"英冠","home":"诺维奇","away":"西布罗","result":0,"resultLabel":"客胜","score":"1:2","startTime":"2026-08-15"},{"matchNum":4,"league":"英冠","home":"斯托克","away":"斯旺西","result":0,"resultLabel":"客胜","score":"1:2","startTime":"2026-08-15"},{"matchNum":5,"league":"英冠","home":"谢菲联","away":"伯明翰","result":1,"resultLabel":"平局","score":"0:0","startTime":"2026-08-16"},{"matchNum":6,"league":"西甲","home":"阿拉维","away":"赫塔费","result":3,"resultLabel":"主胜","score":"3:0","startTime":"2026-08-16"},{"matchNum":7,"league":"西甲","home":"塞维利","away":"巴列卡","result":3,"resultLabel":"主胜","score":"2:1","startTime":"2026-08-16"},{"matchNum":8,"league":"荷甲","home":"威  廉","away":"奈梅亨","result":0,"resultLabel":"客胜","score":"1:4","startTime":"2026-08-15"},{"matchNum":9,"league":"荷甲","home":"乌德勒","away":"阿尔克","result":0,"resultLabel":"客胜","score":"1:4","startTime":"2026-08-16"},{"matchNum":10,"league":"荷甲","home":"精  英","away":"埃因霍","result":0,"resultLabel":"客胜","score":"1:2","startTime":"2026-08-16"},{"matchNum":11,"league":"荷甲","home":"福图纳","away":"坎布尔","result":3,"resultLabel":"主胜","score":"3:1","startTime":"2026-08-16"},{"matchNum":12,"league":"葡超","home":"阿维卡","away":"阿马多","result":1,"resultLabel":"平局","score":"2:2","startTime":"2026-08-15"},{"matchNum":13,"league":"葡超","home":"维塞乌","away":"圣克拉","result":0,"resultLabel":"客胜","score":"0:1","startTime":"2026-08-16"},{"matchNum":14,"league":"葡超","home":"里奥阿","away":"波尔图","result":0,"resultLabel":"客胜","score":"0:2","startTime":"2026-08-16"}]}},"leagueSummary":[{"name":"世界杯","appearances":344,"totalMatches":344,"homeWins":156,"draws":84,"awayWins":104,"homeWinRate":45.348837209302324},{"name":"挪超","appearances":184,"totalMatches":184,"homeWins":86,"draws":42,"awayWins":56,"homeWinRate":46.73913043478261},{"name":"瑞超","appearances":156,"totalMatches":156,"homeWins":56,"draws":32,"awayWins":68,"homeWinRate":35.8974358974359},{"name":"欧冠","appearances":102,"totalMatches":102,"homeWins":44,"draws":22,"awayWins":36,"homeWinRate":43.13725490196079},{"name":"芬超","appearances":96,"totalMatches":96,"homeWins":50,"draws":14,"awayWins":32,"homeWinRate":52.083333333333336},{"name":"国际赛","appearances":96,"totalMatches":96,"homeWins":64,"draws":20,"awayWins":12,"homeWinRate":66.66666666666666},{"name":"英超","appearances":87,"totalMatches":87,"homeWins":37,"draws":32,"awayWins":18,"homeWinRate":42.5287356321839},{"name":"欧罗巴","appearances":84,"totalMatches":84,"homeWins":50,"draws":18,"awayWins":16,"homeWinRate":59.523809523809526},{"name":"美职","appearances":77,"totalMatches":77,"homeWins":30,"draws":32,"awayWins":11,"homeWinRate":38.961038961038966},{"name":"巴甲","appearances":68,"totalMatches":68,"homeWins":20,"draws":36,"awayWins":12,"homeWinRate":29.411764705882355},{"name":"意甲","appearances":64,"totalMatches":64,"homeWins":18,"draws":12,"awayWins":34,"homeWinRate":28.125},{"name":"德甲","appearances":62,"totalMatches":62,"homeWins":28,"draws":14,"awayWins":20,"homeWinRate":45.16129032258064},{"name":"西甲","appearances":57,"totalMatches":57,"homeWins":32,"draws":14,"awayWins":11,"homeWinRate":56.14035087719298},{"name":"法甲","appearances":42,"totalMatches":42,"homeWins":14,"draws":4,"awayWins":20,"homeWinRate":33.33333333333333},{"name":"解放者杯","appearances":36,"totalMatches":36,"homeWins":22,"draws":6,"awayWins":6,"homeWinRate":61.111111111111114},{"name":"葡超","appearances":31,"totalMatches":31,"homeWins":12,"draws":11,"awayWins":8,"homeWinRate":38.70967741935484},{"name":"荷甲","appearances":20,"totalMatches":20,"homeWins":9,"draws":2,"awayWins":9,"homeWinRate":45},{"name":"巴西杯","appearances":16,"totalMatches":16,"homeWins":4,"draws":12,"awayWins":0,"homeWinRate":25},{"name":"法乙","appearances":14,"totalMatches":14,"homeWins":6,"draws":4,"awayWins":4,"homeWinRate":42.857142857142854},{"name":"德乙","appearances":8,"totalMatches":8,"homeWins":4,"draws":2,"awayWins":2,"homeWinRate":50},{"name":"英冠","appearances":7,"totalMatches":7,"homeWins":1,"draws":3,"awayWins":3,"homeWinRate":14.285714285714285},{"name":"欧协联","appearances":6,"totalMatches":6,"homeWins":4,"draws":0,"awayWins":2,"homeWinRate":66.66666666666666},{"name":"英联赛杯","appearances":6,"totalMatches":6,"homeWins":2,"draws":0,"awayWins":4,"homeWinRate":33.33333333333333},{"name":"德国杯","appearances":4,"totalMatches":4,"homeWins":4,"draws":0,"awayWins":0,"homeWinRate":100},{"name":"荷乙","appearances":4,"totalMatches":4,"homeWins":0,"draws":0,"awayWins":4,"homeWinRate":0},{"name":"英足总杯","appearances":4,"totalMatches":4,"homeWins":0,"draws":0,"awayWins":4,"homeWinRate":0},{"name":"意大利杯","appearances":3,"totalMatches":3,"homeWins":0,"draws":0,"awayWins":3,"homeWinRate":0},{"name":"欧超杯","appearances":2,"totalMatches":2,"homeWins":2,"draws":0,"awayWins":0,"homeWinRate":100}],"teamSummary":[{"name":"英格兰","totalMatches":36,"wins":24,"draws":8,"losses":4,"winRate":66.66666666666666,"asHome":20,"asAway":16,"leagues":[["世界杯",{"appearances":32,"wins":20,"draws":8,"losses":4}],["国际赛",{"appearances":4,"wins":4,"draws":0,"losses":0}]]},{"name":"库奥皮","totalMatches":34,"wins":16,"draws":8,"losses":10,"winRate":47.05882352941176,"asHome":24,"asAway":10,"leagues":[["芬超",{"appearances":20,"wins":16,"draws":4,"losses":0}],["欧冠",{"appearances":8,"wins":0,"draws":0,"losses":8}],["欧罗巴",{"appearances":6,"wins":0,"draws":4,"losses":2}]]},{"name":"法  国","totalMatches":32,"wins":24,"draws":0,"losses":8,"winRate":75,"asHome":24,"asAway":8,"leagues":[["世界杯",{"appearances":32,"wins":24,"draws":0,"losses":8}]]},{"name":"西班牙","totalMatches":32,"wins":24,"draws":8,"losses":0,"winRate":75,"asHome":20,"asAway":12,"leagues":[["世界杯",{"appearances":32,"wins":24,"draws":8,"losses":0}]]},{"name":"阿根廷","totalMatches":32,"wins":20,"draws":12,"losses":0,"winRate":62.5,"asHome":20,"asAway":12,"leagues":[["世界杯",{"appearances":32,"wins":20,"draws":12,"losses":0}]]},{"name":"挪  威","totalMatches":32,"wins":20,"draws":8,"losses":4,"winRate":62.5,"asHome":16,"asAway":16,"leagues":[["世界杯",{"appearances":24,"wins":16,"draws":4,"losses":4}],["国际赛",{"appearances":8,"wins":4,"draws":4,"losses":0}]]},{"name":"瑞  士","totalMatches":32,"wins":16,"draws":16,"losses":0,"winRate":50,"asHome":20,"asAway":12,"leagues":[["世界杯",{"appearances":24,"wins":12,"draws":12,"losses":0}],["国际赛",{"appearances":8,"wins":4,"draws":4,"losses":0}]]},{"name":"奥勒松","totalMatches":30,"wins":4,"draws":18,"losses":8,"winRate":13.333333333333334,"asHome":20,"asAway":10,"leagues":[["挪超",{"appearances":30,"wins":4,"draws":18,"losses":8}]]},{"name":"克里斯","totalMatches":30,"wins":6,"draws":4,"losses":20,"winRate":20,"asHome":10,"asAway":20,"leagues":[["挪超",{"appearances":30,"wins":6,"draws":4,"losses":20}]]},{"name":"莫尔德","totalMatches":30,"wins":12,"draws":8,"losses":10,"winRate":40,"asHome":16,"asAway":14,"leagues":[["挪超",{"appearances":30,"wins":12,"draws":8,"losses":10}]]},{"name":"哈马比","totalMatches":28,"wins":8,"draws":8,"losses":12,"winRate":28.57142857142857,"asHome":8,"asAway":20,"leagues":[["瑞超",{"appearances":20,"wins":8,"draws":4,"losses":8}],["欧罗巴",{"appearances":8,"wins":0,"draws":4,"losses":4}]]},{"name":"美  国","totalMatches":28,"wins":16,"draws":0,"losses":12,"winRate":57.14285714285714,"asHome":24,"asAway":4,"leagues":[["世界杯",{"appearances":20,"wins":12,"draws":0,"losses":8}],["国际赛",{"appearances":8,"wins":4,"draws":0,"losses":4}]]},{"name":"萨  堡","totalMatches":26,"wins":16,"draws":8,"losses":2,"winRate":61.53846153846154,"asHome":12,"asAway":14,"leagues":[["挪超",{"appearances":26,"wins":16,"draws":8,"losses":2}]]},{"name":"卡尔马","totalMatches":26,"wins":12,"draws":8,"losses":6,"winRate":46.15384615384615,"asHome":16,"asAway":10,"leagues":[["瑞超",{"appearances":26,"wins":12,"draws":8,"losses":6}]]},{"name":"斯  达","totalMatches":26,"wins":4,"draws":0,"losses":22,"winRate":15.384615384615385,"asHome":14,"asAway":12,"leagues":[["挪超",{"appearances":26,"wins":4,"draws":0,"losses":22}]]},{"name":"天狼星","totalMatches":24,"wins":24,"draws":0,"losses":0,"winRate":100,"asHome":4,"asAway":20,"leagues":[["瑞超",{"appearances":24,"wins":24,"draws":0,"losses":0}]]},{"name":"布  兰","totalMatches":24,"wins":12,"draws":0,"losses":12,"winRate":50,"asHome":16,"asAway":8,"leagues":[["挪超",{"appearances":24,"wins":12,"draws":0,"losses":12}]]},{"name":"罗森博","totalMatches":24,"wins":12,"draws":4,"losses":8,"winRate":50,"asHome":10,"asAway":14,"leagues":[["挪超",{"appearances":24,"wins":12,"draws":4,"losses":8}]]},{"name":"桑纳菲","totalMatches":24,"wins":0,"draws":8,"losses":16,"winRate":0,"asHome":12,"asAway":12,"leagues":[["挪超",{"appearances":24,"wins":0,"draws":8,"losses":16}]]},{"name":"维  京","totalMatches":24,"wins":14,"draws":4,"losses":6,"winRate":58.333333333333336,"asHome":6,"asAway":18,"leagues":[["挪超",{"appearances":24,"wins":14,"draws":4,"losses":6}]]},{"name":"埃尔夫","totalMatches":24,"wins":8,"draws":4,"losses":12,"winRate":33.33333333333333,"asHome":14,"asAway":10,"leagues":[["瑞超",{"appearances":24,"wins":8,"draws":4,"losses":12}]]},{"name":"摩洛哥","totalMatches":24,"wins":8,"draws":12,"losses":4,"winRate":33.33333333333333,"asHome":4,"asAway":20,"leagues":[["世界杯",{"appearances":20,"wins":8,"draws":8,"losses":4}],["国际赛",{"appearances":4,"wins":0,"draws":4,"losses":0}]]},{"name":"加拿大","totalMatches":24,"wins":8,"draws":8,"losses":8,"winRate":33.33333333333333,"asHome":20,"asAway":4,"leagues":[["世界杯",{"appearances":16,"wins":4,"draws":4,"losses":8}],["国际赛",{"appearances":8,"wins":4,"draws":4,"losses":0}]]},{"name":"巴  西","totalMatches":24,"wins":16,"draws":4,"losses":4,"winRate":66.66666666666666,"asHome":20,"asAway":4,"leagues":[["世界杯",{"appearances":16,"wins":8,"draws":4,"losses":4}],["国际赛",{"appearances":8,"wins":8,"draws":0,"losses":0}]]},{"name":"葡萄牙","totalMatches":24,"wins":12,"draws":8,"losses":4,"winRate":50,"asHome":20,"asAway":4,"leagues":[["世界杯",{"appearances":20,"wins":8,"draws":8,"losses":4}],["国际赛",{"appearances":4,"wins":4,"draws":0,"losses":0}]]},{"name":"哥伦比","totalMatches":24,"wins":16,"draws":8,"losses":0,"winRate":66.66666666666666,"asHome":16,"asAway":8,"leagues":[["世界杯",{"appearances":20,"wins":12,"draws":8,"losses":0}],["国际赛",{"appearances":4,"wins":4,"draws":0,"losses":0}]]},{"name":"博  德","totalMatches":22,"wins":12,"draws":10,"losses":0,"winRate":54.54545454545454,"asHome":6,"asAway":16,"leagues":[["挪超",{"appearances":16,"wins":12,"draws":4,"losses":0}],["欧冠",{"appearances":6,"wins":0,"draws":6,"losses":0}]]},{"name":"哥德堡","totalMatches":22,"wins":14,"draws":0,"losses":8,"winRate":63.63636363636363,"asHome":10,"asAway":12,"leagues":[["瑞超",{"appearances":22,"wins":14,"draws":0,"losses":8}]]},{"name":"哈尔姆","totalMatches":22,"wins":4,"draws":4,"losses":14,"winRate":18.181818181818183,"asHome":14,"asAway":8,"leagues":[["瑞超",{"appearances":22,"wins":4,"draws":4,"losses":14}]]},{"name":"AC奥卢","totalMatches":22,"wins":12,"draws":4,"losses":6,"winRate":54.54545454545454,"asHome":14,"asAway":8,"leagues":[["芬超",{"appearances":22,"wins":12,"draws":4,"losses":6}]]},{"name":"赫火花","totalMatches":22,"wins":14,"draws":0,"losses":8,"winRate":63.63636363636363,"asHome":10,"asAway":12,"leagues":[["芬超",{"appearances":22,"wins":14,"draws":0,"losses":8}]]},{"name":"盖  斯","totalMatches":22,"wins":14,"draws":8,"losses":0,"winRate":63.63636363636363,"asHome":16,"asAway":6,"leagues":[["瑞超",{"appearances":22,"wins":14,"draws":8,"losses":0}]]},{"name":"汉  坎","totalMatches":22,"wins":4,"draws":10,"losses":8,"winRate":18.181818181818183,"asHome":6,"asAway":16,"leagues":[["挪超",{"appearances":22,"wins":4,"draws":10,"losses":8}]]},{"name":"利勒斯","totalMatches":22,"wins":8,"draws":0,"losses":14,"winRate":36.36363636363637,"asHome":14,"asAway":8,"leagues":[["挪超",{"appearances":22,"wins":8,"draws":0,"losses":14}]]},{"name":"本菲卡","totalMatches":20,"wins":12,"draws":4,"losses":4,"winRate":60,"asHome":10,"asAway":10,"leagues":[["欧罗巴",{"appearances":14,"wins":8,"draws":2,"losses":4}],["葡超",{"appearances":6,"wins":4,"draws":2,"losses":0}]]},{"name":"布鲁马","totalMatches":20,"wins":0,"draws":12,"losses":8,"winRate":0,"asHome":16,"asAway":4,"leagues":[["瑞超",{"appearances":20,"wins":0,"draws":12,"losses":8}]]},{"name":"代格福","totalMatches":20,"wins":0,"draws":4,"losses":16,"winRate":0,"asHome":8,"asAway":12,"leagues":[["瑞超",{"appearances":20,"wins":0,"draws":4,"losses":16}]]},{"name":"厄格里","totalMatches":20,"wins":4,"draws":4,"losses":12,"winRate":20,"asHome":8,"asAway":12,"leagues":[["瑞超",{"appearances":20,"wins":4,"draws":4,"losses":12}]]},{"name":"佐加顿","totalMatches":20,"wins":12,"draws":4,"losses":4,"winRate":60,"asHome":8,"asAway":12,"leagues":[["瑞超",{"appearances":20,"wins":12,"draws":4,"losses":4}]]},{"name":"奥斯KF","totalMatches":20,"wins":8,"draws":4,"losses":8,"winRate":40,"asHome":16,"asAway":4,"leagues":[["挪超",{"appearances":20,"wins":8,"draws":4,"losses":8}]]},{"name":"国际图","totalMatches":20,"wins":8,"draws":6,"losses":6,"winRate":40,"asHome":6,"asAway":14,"leagues":[["芬超",{"appearances":20,"wins":8,"draws":6,"losses":6}]]},{"name":"坦山猫","totalMatches":20,"wins":12,"draws":0,"losses":8,"winRate":60,"asHome":12,"asAway":8,"leagues":[["芬超",{"appearances":20,"wins":12,"draws":0,"losses":8}]]},{"name":"赫  根","totalMatches":20,"wins":8,"draws":8,"losses":4,"winRate":40,"asHome":12,"asAway":8,"leagues":[["瑞超",{"appearances":20,"wins":8,"draws":8,"losses":4}]]},{"name":"墨西哥","totalMatches":20,"wins":16,"draws":0,"losses":4,"winRate":80,"asHome":16,"asAway":4,"leagues":[["世界杯",{"appearances":20,"wins":16,"draws":0,"losses":4}]]},{"name":"埃  及","totalMatches":20,"wins":4,"draws":8,"losses":8,"winRate":20,"asHome":0,"asAway":20,"leagues":[["世界杯",{"appearances":16,"wins":4,"draws":8,"losses":4}],["国际赛",{"appearances":4,"wins":0,"draws":0,"losses":4}]]},{"name":"德  国","totalMatches":20,"wins":12,"draws":4,"losses":4,"winRate":60,"asHome":12,"asAway":8,"leagues":[["世界杯",{"appearances":12,"wins":4,"draws":4,"losses":4}],["国际赛",{"appearances":8,"wins":8,"draws":0,"losses":0}]]},{"name":"瑞  典","totalMatches":20,"wins":4,"draws":4,"losses":12,"winRate":20,"asHome":4,"asAway":16,"leagues":[["世界杯",{"appearances":16,"wins":4,"draws":4,"losses":8}],["国际赛",{"appearances":4,"wins":0,"draws":0,"losses":4}]]},{"name":"克罗地","totalMatches":20,"wins":12,"draws":0,"losses":8,"winRate":60,"asHome":8,"asAway":12,"leagues":[["世界杯",{"appearances":16,"wins":8,"draws":0,"losses":8}],["国际赛",{"appearances":4,"wins":4,"draws":0,"losses":0}]]},{"name":"突尼斯","totalMatches":20,"wins":0,"draws":0,"losses":20,"winRate":0,"asHome":8,"asAway":12,"leagues":[["世界杯",{"appearances":12,"wins":0,"draws":0,"losses":12}],["国际赛",{"appearances":8,"wins":0,"draws":0,"losses":8}]]},{"name":"巴拿马","totalMatches":20,"wins":0,"draws":4,"losses":16,"winRate":0,"asHome":12,"asAway":8,"leagues":[["世界杯",{"appearances":12,"wins":0,"draws":0,"losses":12}],["国际赛",{"appearances":8,"wins":0,"draws":4,"losses":4}]]}],"historyEvaluations":[{"issue":"26105","date":"2026-08-16","generatedAt":"2026-08-16T09:24:21.927Z","difficulty":{"totalScore":6.0590606237999225,"level":4,"levelLabel":"🔴 中高","drawScore":6.160714285714287,"cvScore":5.5766955432959575,"hitScore":3.776991252054863,"entScore":9.36212319623966,"avgDrawRate":0.2464285714285715,"avgEnt":0.9362123196239659},"prizeCV":1.1153391086591915,"recent5Types":["●正常","●正常","🧊冷门期","🧊冷门期","🧊冷门期"],"riskyPositions":[{"position":3,"risk":"high","riskLabel":"🔴高","match":{"league":"英冠","home":"诺维奇","away":"西布罗"}},{"position":4,"risk":"high","riskLabel":"🔴高","match":{"league":"英冠","home":"斯托克","away":"斯旺西"}},{"position":6,"risk":"high","riskLabel":"🔴高","match":{"league":"西甲","home":"阿拉维","away":"赫塔费"}},{"position":7,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"西甲","home":"塞维利","away":"巴列卡"}},{"position":8,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"荷甲","home":"威  廉","away":"奈梅亨"}},{"position":9,"risk":"high","riskLabel":"🔴高","match":{"league":"荷甲","home":"乌德勒","away":"阿尔克"}},{"position":12,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"葡超","home":"阿维卡","away":"阿马多"}},{"position":13,"risk":"high","riskLabel":"🔴高","match":{"league":"葡超","home":"维塞乌","away":"圣克拉"}}],"safePositions":[{"position":7,"maxKey":"win","maxVal":12,"match":{"league":"西甲","home":"塞维利","away":"巴列卡"}}]},{"issue":"26071","date":"2026-05-04","generatedAt":"2026-05-04T00:00:00.000Z","difficulty":{"totalScore":2.7382157977287527,"level":2,"levelLabel":"🟡 中低","drawScore":3.571428571428571,"cvScore":0,"hitScore":6.667148905200725,"entScore":0,"avgDrawRate":0.14285714285714285,"avgEnt":0},"prizeCV":0,"recent5Types":["●正常"],"riskyPositions":[],"safePositions":[]},{"issue":"26072","date":"2026-05-10","generatedAt":"2026-05-10T00:00:00.000Z","difficulty":{"totalScore":4.49438600804751,"level":2,"levelLabel":"🟡 中低","drawScore":5.357142857142857,"cvScore":0.6529788967315174,"hitScore":7.290680829335905,"entScore":4.506641096938983,"avgDrawRate":0.21428571428571427,"avgEnt":0.4506641096938983},"prizeCV":0.13059577934630348,"recent5Types":["🧊冷门期","●正常"],"riskyPositions":[],"safePositions":[]},{"issue":"26073","date":"2026-05-10","generatedAt":"2026-05-10T00:00:00.000Z","difficulty":{"totalScore":4.435991627143772,"level":2,"levelLabel":"🟡 中低","drawScore":4.761904761904762,"cvScore":3.564282579790606,"hitScore":3.65126598796825,"entScore":6.017665283163148,"avgDrawRate":0.19047619047619047,"avgEnt":0.6017665283163148},"prizeCV":0.7128565159581213,"recent5Types":["🍲火锅奖","🧊冷门期","●正常"],"riskyPositions":[],"safePositions":[]},{"issue":"26074","date":"2026-05-11","generatedAt":"2026-05-11T00:00:00.000Z","difficulty":{"totalScore":5.194547162791237,"level":3,"levelLabel":"🟠 中等","drawScore":5.803571428571428,"cvScore":3.564282579790606,"hitScore":4.061674648925027,"entScore":7.734932135204502,"avgDrawRate":0.23214285714285715,"avgEnt":0.7734932135204502},"prizeCV":0.7128565159581213,"recent5Types":["🥶无人中","🍲火锅奖","🧊冷门期","●正常"],"riskyPositions":[],"safePositions":[]},{"issue":"26075","date":"2026-05-15","generatedAt":"2026-05-15T00:00:00.000Z","difficulty":{"totalScore":5.243839004245783,"level":3,"levelLabel":"🟠 中等","drawScore":5.357142857142857,"cvScore":4.100549586208815,"hitScore":4.231560397686095,"entScore":7.768343255645993,"avgDrawRate":0.21428571428571427,"avgEnt":0.7768343255645993},"prizeCV":0.820109917241763,"recent5Types":["●正常","🥶无人中","🍲火锅奖","🧊冷门期","●正常"],"riskyPositions":[],"safePositions":[]},{"issue":"26076","date":"2026-05-17","generatedAt":"2026-05-17T00:00:00.000Z","difficulty":{"totalScore":5.327678979376154,"level":3,"levelLabel":"🟠 中等","drawScore":5.357142857142857,"cvScore":4.136665070357426,"hitScore":4.432288707623002,"entScore":7.891488388690952,"avgDrawRate":0.21428571428571427,"avgEnt":0.7891488388690953},"prizeCV":0.8273330140714853,"recent5Types":["●正常","●正常","🥶无人中","🍲火锅奖","🧊冷门期"],"riskyPositions":[],"safePositions":[]},{"issue":"26077","date":"2026-05-21","generatedAt":"2026-05-21T00:00:00.000Z","difficulty":{"totalScore":5.340695237741902,"level":3,"levelLabel":"🟠 中等","drawScore":5.10204081632653,"cvScore":4.136665070357426,"hitScore":4.6502705046811075,"entScore":8.066745495421548,"avgDrawRate":0.2040816326530612,"avgEnt":0.8066745495421549},"prizeCV":0.8273330140714853,"recent5Types":["🥶无人中","●正常","●正常","🥶无人中","🍲火锅奖"],"riskyPositions":[],"safePositions":[]},{"issue":"26078","date":"2026-05-21","generatedAt":"2026-05-21T00:00:00.000Z","difficulty":{"totalScore":5.416270990981764,"level":3,"levelLabel":"🟠 中等","drawScore":4.910714285714285,"cvScore":4.573142109441858,"hitScore":4.647066078224044,"entScore":8.190023291755018,"avgDrawRate":0.1964285714285714,"avgEnt":0.8190023291755019},"prizeCV":0.9146284218883716,"recent5Types":["●正常","🥶无人中","●正常","●正常","🥶无人中"],"riskyPositions":[],"safePositions":[]},{"issue":"26079","date":"2026-05-24","generatedAt":"2026-05-24T00:00:00.000Z","difficulty":{"totalScore":5.436628419140909,"level":3,"levelLabel":"🟠 中等","drawScore":4.761904761904761,"cvScore":5.3171084347672295,"hitScore":4.026225395346622,"entScore":8.361117665205091,"avgDrawRate":0.19047619047619044,"avgEnt":0.8361117665205091},"prizeCV":1.0634216869534459,"recent5Types":["🍲火锅奖","●正常","🥶无人中","●正常","●正常"],"riskyPositions":[],"safePositions":[]},{"issue":"26080","date":"2026-05-25","generatedAt":"2026-05-25T00:00:00.000Z","difficulty":{"totalScore":5.459134939644191,"level":3,"levelLabel":"🟠 中等","drawScore":5,"cvScore":4.924329765565804,"hitScore":4.1735496202774005,"entScore":8.423325465916946,"avgDrawRate":0.2,"avgEnt":0.8423325465916945},"prizeCV":0.9848659531131608,"recent5Types":["🧊冷门期","🍲火锅奖","●正常","🥶无人中","●正常"],"riskyPositions":[],"safePositions":[]},{"issue":"26081","date":"2026-05-28","generatedAt":"2026-05-28T00:00:00.000Z","difficulty":{"totalScore":5.531505230572989,"level":3,"levelLabel":"🟠 中等","drawScore":5.357142857142856,"cvScore":4.496422130485494,"hitScore":4.303771835810641,"entScore":8.621569409280493,"avgDrawRate":0.21428571428571425,"avgEnt":0.8621569409280493},"prizeCV":0.8992844260970988,"recent5Types":["🧊冷门期","🧊冷门期","🍲火锅奖","●正常","🥶无人中"],"riskyPositions":[{"position":2,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"德甲","home":"帕德博","away":"沃尔夫"}}],"safePositions":[]},{"issue":"26082","date":"2026-05-31","generatedAt":"2026-05-31T00:00:00.000Z","difficulty":{"totalScore":5.755539530019433,"level":3,"levelLabel":"🟠 中等","drawScore":5.654761904761903,"cvScore":4.899381466772064,"hitScore":4.306559703168267,"entScore":8.788128330528899,"avgDrawRate":0.22619047619047614,"avgEnt":0.8788128330528898},"prizeCV":0.9798762933544127,"recent5Types":["●正常","🧊冷门期","🧊冷门期","🍲火锅奖","●正常"],"riskyPositions":[{"position":2,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"法甲","home":"尼  斯","away":"埃蒂安"}},{"position":6,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"挪超","home":"奥勒松","away":"汉  坎"}}],"safePositions":[]},{"issue":"26083","date":"2026-06-02","generatedAt":"2026-06-02T00:00:00.000Z","difficulty":{"totalScore":5.7981967391453315,"level":3,"levelLabel":"🟠 中等","drawScore":5.357142857142856,"cvScore":5.37516535913476,"hitScore":4.413002357529852,"entScore":8.720059764181608,"avgDrawRate":0.21428571428571425,"avgEnt":0.8720059764181608},"prizeCV":1.075033071826952,"recent5Types":["🧊冷门期","●正常","🧊冷门期","🧊冷门期","🍲火锅奖"],"riskyPositions":[{"position":2,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"国际赛","home":"德  国","away":"芬  兰"}},{"position":6,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"国际赛","home":"挪  威","away":"瑞  典"}},{"position":11,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"瑞超","home":"代格福","away":"布鲁马"}}],"safePositions":[]},{"issue":"26084","date":"2026-06-08","generatedAt":"2026-06-08T00:00:00.000Z","difficulty":{"totalScore":5.828742700238152,"level":3,"levelLabel":"🟠 中等","drawScore":5.612244897959183,"cvScore":5.805746409597335,"hitScore":3.679422950844604,"entScore":8.868884453699563,"avgDrawRate":0.22448979591836735,"avgEnt":0.8868884453699563},"prizeCV":1.1611492819194669,"recent5Types":["🍲火锅奖","🧊冷门期","●正常","🧊冷门期","🧊冷门期"],"riskyPositions":[{"position":1,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"国际赛","home":"斯洛伐","away":"黑  山"}},{"position":2,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"国际赛","home":"匈牙利","away":"芬  兰"}},{"position":6,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"国际赛","home":"罗马尼","away":"威尔士"}},{"position":8,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"国际赛","home":"澳大利","away":"瑞  士"}},{"position":11,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"国际赛","home":"巴  西","away":"埃  及"}}],"safePositions":[]},{"issue":"26085","date":"2026-06-16","generatedAt":"2026-06-16T00:00:00.000Z","difficulty":{"totalScore":6.035567307713999,"level":4,"levelLabel":"🔴 中高","drawScore":6.071428571428571,"cvScore":5.805746409597335,"hitScore":3.777974232628789,"entScore":9.091042878644481,"avgDrawRate":0.24285714285714285,"avgEnt":0.9091042878644482},"prizeCV":1.1611492819194669,"recent5Types":["🥶无人中","🍲火锅奖","🧊冷门期","●正常","🧊冷门期"],"riskyPositions":[{"position":1,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"墨西哥","away":"南  非"}},{"position":2,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"韩  国","away":"捷  克"}},{"position":3,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"加拿大","away":"波  黑"}},{"position":6,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"巴  西","away":"摩洛哥"}},{"position":8,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"澳大利","away":"土耳其"}},{"position":11,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"瑞  典","away":"突尼斯"}}],"safePositions":[]},{"issue":"26086","date":"2026-06-20","generatedAt":"2026-06-20T00:00:00.000Z","difficulty":{"totalScore":5.9447396334932705,"level":3,"levelLabel":"🟠 中等","drawScore":5.915178571428571,"cvScore":6.17898302361453,"hitScore":3.231302123639818,"entScore":9.08807387625556,"avgDrawRate":0.23660714285714285,"avgEnt":0.908807387625556},"prizeCV":1.2357966047229059,"recent5Types":["🍲火锅奖","🥶无人中","🍲火锅奖","🧊冷门期","●正常"],"riskyPositions":[{"position":1,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"法  国","away":"塞内加"}},{"position":2,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"伊拉克","away":"挪  威"}},{"position":3,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"阿根廷","away":"阿尔及"}},{"position":6,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"加  纳","away":"巴拿马"}},{"position":8,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"捷  克","away":"南  非"}},{"position":11,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"墨西哥","away":"韩  国"}}],"safePositions":[]},{"issue":"26087","date":"2026-06-24","generatedAt":"2026-06-24T00:00:00.000Z","difficulty":{"totalScore":6.028125477355877,"level":4,"levelLabel":"🔴 中高","drawScore":5.777310924369747,"cvScore":6.558953524733368,"hitScore":3.3123280892521203,"entScore":9.135558982742904,"avgDrawRate":0.2310924369747899,"avgEnt":0.9135558982742903},"prizeCV":1.3117907049466735,"recent5Types":["●正常","🍲火锅奖","🥶无人中","🍲火锅奖","🧊冷门期"],"riskyPositions":[{"position":1,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"荷  兰","away":"瑞  典"}},{"position":2,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"德  国","away":"科特迪"}},{"position":3,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"突尼斯","away":"日  本"}},{"position":6,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"新西兰","away":"埃  及"}},{"position":8,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"法  国","away":"伊拉克"}},{"position":11,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"葡萄牙","away":"乌兹别"}}],"safePositions":[]},{"issue":"26088","date":"2026-06-28","generatedAt":"2026-06-28T00:00:00.000Z","difficulty":{"totalScore":6.064732944022491,"level":4,"levelLabel":"🔴 中高","drawScore":5.654761904761903,"cvScore":6.856999829024311,"hitScore":3.274438708431685,"entScore":9.177223691149603,"avgDrawRate":0.22619047619047616,"avgEnt":0.9177223691149603},"prizeCV":1.3713999658048621,"recent5Types":["●正常","●正常","🍲火锅奖","🥶无人中","🍲火锅奖"],"riskyPositions":[{"position":1,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"瑞  士","away":"加拿大"}},{"position":2,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"苏格兰","away":"巴  西"}},{"position":3,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"捷  克","away":"墨西哥"}},{"position":6,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"日  本","away":"瑞  典"}},{"position":8,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"土耳其","away":"美  国"}},{"position":11,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"克罗地","away":"加  纳"}}],"safePositions":[]},{"issue":"26089","date":"2026-07-04","generatedAt":"2026-07-04T00:00:00.000Z","difficulty":{"totalScore":6.098262648918175,"level":4,"levelLabel":"🔴 中高","drawScore":5.7330827067669174,"cvScore":7.17796160677011,"hitScore":3.0100927845170853,"entScore":9.156621195331505,"avgDrawRate":0.2293233082706767,"avgEnt":0.9156621195331505},"prizeCV":1.435592321354022,"recent5Types":["🍲火锅奖","●正常","●正常","🍲火锅奖","🥶无人中"],"riskyPositions":[{"position":1,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"巴  西","away":"日  本"}},{"position":2,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"德  国","away":"巴拉圭"}},{"position":3,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"荷  兰","away":"摩洛哥"}},{"position":6,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"墨西哥","away":"厄瓜多"}},{"position":8,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"美  国","away":"波  黑"}},{"position":11,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"瑞  士","away":"阿尔及"}},{"position":13,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"阿根廷","away":"佛得角"}}],"safePositions":[{"position":7,"maxKey":"win","maxVal":12,"match":{"league":"世界杯","home":"英格兰","away":"刚果金"}}]},{"issue":"26090","date":"2026-07-08","generatedAt":"2026-07-08T00:00:00.000Z","difficulty":{"totalScore":6.152633986231409,"level":4,"levelLabel":"🔴 中高","drawScore":5.625,"cvScore":7.446574912978158,"hitScore":3.0476602659744323,"entScore":9.20787595746631,"avgDrawRate":0.225,"avgEnt":0.920787595746631},"prizeCV":1.4893149825956316,"recent5Types":["●正常","🍲火锅奖","●正常","●正常","🍲火锅奖"],"riskyPositions":[{"position":1,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"加拿大","away":"摩洛哥"}},{"position":2,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"巴拉圭","away":"法  国"}},{"position":3,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"巴  西","away":"挪  威"}},{"position":6,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"美  国","away":"比利时"}},{"position":8,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"瑞  士","away":"哥伦比"}},{"position":11,"risk":"high","riskLabel":"🔴高","match":{"league":"瑞超","home":"卡尔马","away":"厄格里"}},{"position":13,"risk":"high","riskLabel":"🔴高","match":{"league":"瑞超","home":"布鲁马","away":"盖  斯"}}],"safePositions":[{"position":7,"maxKey":"win","maxVal":13,"match":{"league":"世界杯","home":"阿根廷","away":"埃  及"}},{"position":9,"maxKey":"win","maxVal":12,"match":{"league":"欧冠","home":"雷维京","away":"杰  尔"}}]},{"issue":"26091","date":"2026-07-13","generatedAt":"2026-07-13T00:00:00.000Z","difficulty":{"totalScore":6.397072880858461,"level":4,"levelLabel":"🔴 中高","drawScore":5.803571428571428,"cvScore":8.18557746895982,"hitScore":3.0464733541904354,"entScore":9.239943732497345,"avgDrawRate":0.23214285714285712,"avgEnt":0.9239943732497344},"prizeCV":1.6371154937919643,"recent5Types":["●正常","●正常","🍲火锅奖","●正常","●正常"],"riskyPositions":[{"position":1,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"法  国","away":"摩洛哥"}},{"position":2,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"西班牙","away":"比利时"}},{"position":3,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"挪  威","away":"英格兰"}},{"position":4,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"世界杯","home":"阿根廷","away":"瑞  士"}},{"position":6,"risk":"high","riskLabel":"🔴高","match":{"league":"瑞超","home":"布鲁马","away":"天狼星"}},{"position":8,"risk":"high","riskLabel":"🔴高","match":{"league":"挪超","home":"腓特烈","away":"利勒斯"}},{"position":9,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"挪超","home":"奥勒松","away":"莫尔德"}},{"position":11,"risk":"high","riskLabel":"🔴高","match":{"league":"挪超","home":"布  兰","away":"斯  达"}},{"position":13,"risk":"high","riskLabel":"🔴高","match":{"league":"挪超","home":"桑纳菲","away":"汉  坎"}}],"safePositions":[{"position":7,"maxKey":"win","maxVal":13,"match":{"league":"瑞超","home":"盖  斯","away":"埃尔夫"}}]},{"issue":"26092","date":"2026-07-21","generatedAt":"2026-07-21T00:00:00.000Z","difficulty":{"totalScore":6.391791175408464,"level":4,"levelLabel":"🔴 中高","drawScore":5.625,"cvScore":8.392784950922323,"hitScore":3.04588026307807,"entScore":9.223124359541826,"avgDrawRate":0.225,"avgEnt":0.9223124359541826},"prizeCV":1.6785569901844646,"recent5Types":["🧊冷门期","●正常","●正常","🍲火锅奖","●正常"],"riskyPositions":[{"position":1,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"法  国","away":"西班牙"}},{"position":2,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"英格兰","away":"阿根廷"}},{"position":3,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"欧冠","home":"杰  尔","away":"雷维京"}},{"position":4,"risk":"high","riskLabel":"🔴高","match":{"league":"欧冠","home":"新圣徒","away":"萨巴赫"}},{"position":6,"risk":"high","riskLabel":"🔴高","match":{"league":"欧冠","home":"苏捷斯","away":"阿拉木"}},{"position":8,"risk":"high","riskLabel":"🔴高","match":{"league":"挪超","home":"瓦勒伦","away":"奥勒松"}},{"position":9,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"巴甲","home":"博塔弗","away":"桑托斯"}},{"position":11,"risk":"high","riskLabel":"🔴高","match":{"league":"美职","home":"蒙特利","away":"多伦多"}},{"position":13,"risk":"high","riskLabel":"🔴高","match":{"league":"美职","home":"圣路易","away":"堪萨斯"}}],"safePositions":[{"position":7,"maxKey":"win","maxVal":13,"match":{"league":"欧罗巴","home":"费伦茨","away":"伏伊伏"}}]},{"issue":"26093","date":"2026-07-21","generatedAt":"2026-07-21T00:00:00.000Z","difficulty":{"totalScore":6.390742749590909,"level":4,"levelLabel":"🔴 中高","drawScore":5.803571428571428,"cvScore":8.016730779972995,"hitScore":3.180637419753002,"entScore":9.251646355439902,"avgDrawRate":0.23214285714285712,"avgEnt":0.9251646355439903},"prizeCV":1.6033461559945992,"recent5Types":["●正常","🧊冷门期","●正常","●正常","🍲火锅奖"],"riskyPositions":[{"position":1,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"法  国","away":"英格兰"}},{"position":2,"risk":"high","riskLabel":"🔴高","match":{"league":"世界杯","home":"西班牙","away":"阿根廷"}},{"position":3,"risk":"high","riskLabel":"🔴高","match":{"league":"瑞超","home":"埃尔夫","away":"天狼星"}},{"position":4,"risk":"high","riskLabel":"🔴高","match":{"league":"瑞超","home":"哈尔姆","away":"赫  根"}},{"position":6,"risk":"high","riskLabel":"🔴高","match":{"league":"瑞超","home":"卡尔马","away":"马尔默"}},{"position":8,"risk":"high","riskLabel":"🔴高","match":{"league":"挪超","home":"克里斯","away":"萨  堡"}},{"position":9,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"挪超","home":"利勒斯","away":"奥斯KF"}},{"position":11,"risk":"high","riskLabel":"🔴高","match":{"league":"挪超","home":"莫尔德","away":"布  兰"}},{"position":13,"risk":"high","riskLabel":"🔴高","match":{"league":"芬超","home":"AC奥卢","away":"赫火花"}}],"safePositions":[{"position":7,"maxKey":"win","maxVal":12,"match":{"league":"瑞超","home":"厄格里","away":"佐加顿"}},{"position":9,"maxKey":"win","maxVal":12,"match":{"league":"挪超","home":"利勒斯","away":"奥斯KF"}}]},{"issue":"26094","date":"2026-07-24","generatedAt":"2026-07-24T00:00:00.000Z","difficulty":{"totalScore":6.15998716814423,"level":4,"levelLabel":"🔴 中高","drawScore":5.625,"cvScore":7.313907879172053,"hitScore":3.179336351045645,"entScore":9.245880552949027,"avgDrawRate":0.22500000000000003,"avgEnt":0.9245880552949027},"prizeCV":1.4627815758344105,"recent5Types":["🧊冷门期","●正常","🧊冷门期","●正常","●正常"],"riskyPositions":[{"position":3,"risk":"high","riskLabel":"🔴高","match":{"league":"欧冠","home":"格拉茨","away":"哈  茨"}},{"position":4,"risk":"high","riskLabel":"🔴高","match":{"league":"欧罗巴","home":"哈马比","away":"安德莱"}},{"position":6,"risk":"high","riskLabel":"🔴高","match":{"league":"欧罗巴","home":"特温特","away":"费伦茨"}},{"position":8,"risk":"high","riskLabel":"🔴高","match":{"league":"挪超","home":"博  德","away":"汉  坎"}},{"position":11,"risk":"high","riskLabel":"🔴高","match":{"league":"巴甲","home":"沙佩科","away":"弗拉门"}},{"position":13,"risk":"high","riskLabel":"🔴高","match":{"league":"巴甲","home":"博塔弗","away":"维多利"}}],"safePositions":[{"position":7,"maxKey":"win","maxVal":13,"match":{"league":"欧罗巴","home":"圣加仑","away":"本菲卡"}},{"position":9,"maxKey":"win","maxVal":12,"match":{"league":"挪超","home":"利勒斯","away":"维  京"}}]},{"issue":"26095","date":"2026-07-26","generatedAt":"2026-07-26T00:00:00.000Z","difficulty":{"totalScore":6.15621456768354,"level":4,"levelLabel":"🔴 中高","drawScore":5.892857142857144,"cvScore":6.914036286356765,"hitScore":3.1956843770934706,"entScore":9.304636294819188,"avgDrawRate":0.23571428571428577,"avgEnt":0.9304636294819187},"prizeCV":1.382807257271353,"recent5Types":["🧊冷门期","🧊冷门期","●正常","🧊冷门期","●正常"],"riskyPositions":[{"position":3,"risk":"high","riskLabel":"🔴高","match":{"league":"挪超","home":"克里斯","away":"斯  达"}},{"position":4,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"芬超","home":"玛丽港","away":"AC奥卢"}},{"position":6,"risk":"high","riskLabel":"🔴高","match":{"league":"巴甲","home":"巴拉竞","away":"巴国际"}},{"position":8,"risk":"high","riskLabel":"🔴高","match":{"league":"巴甲","home":"达伽马","away":"米拉索"}},{"position":11,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"美职","home":"明尼苏","away":"温哥华"}},{"position":13,"risk":"high","riskLabel":"🔴高","match":{"league":"美职","home":"圣迭戈","away":"达拉斯"}}],"safePositions":[{"position":7,"maxKey":"win","maxVal":13,"match":{"league":"巴甲","home":"桑托斯","away":"沙佩科"}}]},{"issue":"26096","date":"2026-07-27","generatedAt":"2026-07-27T00:00:00.000Z","difficulty":{"totalScore":6.257146556888175,"level":4,"levelLabel":"🔴 中高","drawScore":6.071428571428572,"cvScore":7.066368257031268,"hitScore":3.2029364201547117,"entScore":9.341959080815544,"avgDrawRate":0.24285714285714288,"avgEnt":0.9341959080815544},"prizeCV":1.4132736514062536,"recent5Types":["🥶无人中","🧊冷门期","🧊冷门期","●正常","🧊冷门期"],"riskyPositions":[{"position":1,"risk":"high","riskLabel":"🔴高","match":{"league":"瑞超","home":"布鲁马","away":"哈马比"}},{"position":3,"risk":"high","riskLabel":"🔴高","match":{"league":"瑞超","home":"盖  斯","away":"哈尔姆"}},{"position":4,"risk":"high","riskLabel":"🔴高","match":{"league":"瑞超","home":"马尔默","away":"埃尔夫"}},{"position":6,"risk":"high","riskLabel":"🔴高","match":{"league":"挪超","home":"奥斯KF","away":"莫尔德"}},{"position":8,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"挪超","home":"萨  堡","away":"汉  坎"}},{"position":9,"risk":"high","riskLabel":"🔴高","match":{"league":"挪超","home":"奥勒松","away":"维  京"}},{"position":11,"risk":"high","riskLabel":"🔴高","match":{"league":"芬超","home":"国际图","away":"赫火花"}},{"position":13,"risk":"high","riskLabel":"🔴高","match":{"league":"巴甲","home":"弗拉门","away":"圣保罗"}}],"safePositions":[{"position":7,"maxKey":"win","maxVal":12,"match":{"league":"挪超","home":"桑纳菲","away":"博  德"}},{"position":10,"maxKey":"win","maxVal":12,"match":{"league":"芬超","home":"坦山猫","away":"拉赫蒂"}}]},{"issue":"26097","date":"2026-07-31","generatedAt":"2026-07-31T00:00:00.000Z","difficulty":{"totalScore":6.203693290239474,"level":4,"levelLabel":"🔴 中高","drawScore":6.25,"cvScore":6.6494878830424735,"hitScore":3.1983172815747496,"entScore":9.333709995425838,"avgDrawRate":0.25,"avgEnt":0.9333709995425838},"prizeCV":1.3298975766084946,"recent5Types":["●正常","🥶无人中","🧊冷门期","🧊冷门期","●正常"],"riskyPositions":[{"position":3,"risk":"high","riskLabel":"🔴高","match":{"league":"欧冠","home":"阿拉木","away":"奥莫尼"}},{"position":4,"risk":"high","riskLabel":"🔴高","match":{"league":"欧冠","home":"波兹南","away":"奥胡斯"}},{"position":6,"risk":"high","riskLabel":"🔴高","match":{"league":"欧罗巴","home":"帕福斯","away":"海杜克"}},{"position":8,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"欧罗巴","home":"费伦茨","away":"特温特"}},{"position":9,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"欧罗巴","home":"本菲卡","away":"圣加仑"}},{"position":11,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"巴甲","home":"米拉索","away":"里  莫"}},{"position":13,"risk":"high","riskLabel":"🔴高","match":{"league":"巴甲","home":"维多利","away":"帕尔梅"}},{"position":14,"risk":"high","riskLabel":"🔴高","match":{"league":"巴甲","home":"科林蒂","away":"巴拉竞"}}],"safePositions":[{"position":7,"maxKey":"win","maxVal":13,"match":{"league":"欧罗巴","home":"安德莱","away":"哈马比"}},{"position":10,"maxKey":"win","maxVal":12,"match":{"league":"巴甲","home":"巴国际","away":"弗拉门"}}]},{"issue":"26098","date":"2026-08-02","generatedAt":"2026-08-02T00:00:00.000Z","difficulty":{"totalScore":6.2812126203889935,"level":4,"levelLabel":"🔴 中高","drawScore":6.785714285714284,"cvScore":6.256179917309096,"hitScore":3.2229014103344653,"entScore":9.37864001381909,"avgDrawRate":0.27142857142857135,"avgEnt":0.9378640013819091},"prizeCV":1.2512359834618192,"recent5Types":["🧊冷门期","●正常","🥶无人中","🧊冷门期","🧊冷门期"],"riskyPositions":[{"position":1,"risk":"high","riskLabel":"🔴高","match":{"league":"瑞超","home":"赫  根","away":"卡尔马"}},{"position":3,"risk":"high","riskLabel":"🔴高","match":{"league":"挪超","home":"斯  达","away":"维  京"}},{"position":4,"risk":"high","riskLabel":"🔴高","match":{"league":"芬超","home":"拉赫蒂","away":"雅  罗"}},{"position":6,"risk":"high","riskLabel":"🔴高","match":{"league":"巴西杯","home":"达伽马","away":"弗鲁米"}},{"position":8,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"美职","home":"辛辛那","away":"圣何塞"}},{"position":9,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"美职","home":"华盛顿","away":"纳什维"}},{"position":11,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"美职","home":"蒙特利","away":"新英格"}},{"position":12,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"美职","home":"温哥华","away":"洛杉FC"}},{"position":13,"risk":"high","riskLabel":"🔴高","match":{"league":"美职","home":"芝加哥","away":"夏洛特"}},{"position":14,"risk":"high","riskLabel":"🔴高","match":{"league":"美职","home":"圣路易","away":"盐湖城"}}],"safePositions":[{"position":7,"maxKey":"win","maxVal":12,"match":{"league":"巴西杯","home":"桑托斯","away":"里  莫"}}]},{"issue":"26099","date":"2026-08-04","generatedAt":"2026-08-04T00:00:00.000Z","difficulty":{"totalScore":6.255852712065427,"level":4,"levelLabel":"🔴 中高","drawScore":6.785714285714281,"cvScore":6.047422893861651,"hitScore":3.382120978444875,"entScore":9.313762291372557,"avgDrawRate":0.2714285714285713,"avgEnt":0.9313762291372557},"prizeCV":1.2094845787723303,"recent5Types":["●正常","🧊冷门期","●正常","🥶无人中","🧊冷门期"],"riskyPositions":[{"position":1,"risk":"high","riskLabel":"🔴高","match":{"league":"瑞超","home":"布鲁马","away":"马尔默"}},{"position":3,"risk":"high","riskLabel":"🔴高","match":{"league":"瑞超","home":"索尔纳","away":"厄格里"}},{"position":4,"risk":"high","riskLabel":"🔴高","match":{"league":"瑞超","home":"佐加顿","away":"韦斯罗"}},{"position":6,"risk":"high","riskLabel":"🔴高","match":{"league":"挪超","home":"奥勒松","away":"特罗姆"}},{"position":8,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"挪超","home":"莫尔德","away":"萨  堡"}},{"position":9,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"挪超","home":"布  兰","away":"罗森博"}},{"position":11,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"芬超","home":"AC奥卢","away":"坦山猫"}},{"position":12,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"芬超","home":"塞伊奈","away":"赫尔辛"}},{"position":13,"risk":"high","riskLabel":"🔴高","match":{"league":"巴西杯","home":"米拉索","away":"格雷米"}},{"position":14,"risk":"high","riskLabel":"🔴高","match":{"league":"巴西杯","home":"巴拉竞","away":"维多利"}}],"safePositions":[{"position":7,"maxKey":"win","maxVal":12,"match":{"league":"挪超","home":"奥斯KF","away":"克里斯"}}]},{"issue":"26100","date":"2026-08-07","generatedAt":"2026-08-07T00:00:00.000Z","difficulty":{"totalScore":6.301431373853869,"level":4,"levelLabel":"🔴 中高","drawScore":6.696428571428568,"cvScore":6.3956011459649345,"hitScore":3.3754043128448794,"entScore":9.248757188614226,"avgDrawRate":0.26785714285714274,"avgEnt":0.9248757188614226},"prizeCV":1.2791202291929868,"recent5Types":["●正常","●正常","🧊冷门期","●正常","🥶无人中"],"riskyPositions":[{"position":3,"risk":"high","riskLabel":"🔴高","match":{"league":"欧冠","home":"索斯基","away":"阿拉木"}},{"position":4,"risk":"high","riskLabel":"🔴高","match":{"league":"欧冠","home":"奥林匹","away":"奈梅亨"}},{"position":6,"risk":"high","riskLabel":"🔴高","match":{"league":"欧冠","home":"圣吉联","away":"博  德"}},{"position":8,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"欧冠","home":"费内巴","away":"格拉茨"}},{"position":9,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"欧罗巴","home":"库奥皮","away":"克大学"}},{"position":12,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"欧罗巴","home":"塞萨洛","away":"安德莱"}},{"position":13,"risk":"high","riskLabel":"🔴高","match":{"league":"欧罗巴","home":"图  恩","away":"雷维京"}},{"position":14,"risk":"high","riskLabel":"🔴高","match":{"league":"欧罗巴","home":"本菲卡","away":"哈  茨"}}],"safePositions":[{"position":7,"maxKey":"win","maxVal":12,"match":{"league":"欧冠","home":"奥胡斯","away":"萨巴赫"}},{"position":11,"maxKey":"win","maxVal":12,"match":{"league":"欧罗巴","home":"萨茨堡","away":"帕福斯"}}]},{"issue":"26101","date":"2026-08-09","generatedAt":"2026-08-09T00:00:00.000Z","difficulty":{"totalScore":6.210564483314179,"level":4,"levelLabel":"🔴 中高","drawScore":6.428571428571425,"cvScore":6.395601145964934,"hitScore":3.3761490717187725,"entScore":9.195277501609123,"avgDrawRate":0.25714285714285706,"avgEnt":0.9195277501609123},"prizeCV":1.2791202291929866,"recent5Types":["🧊冷门期","●正常","●正常","🧊冷门期","●正常"],"riskyPositions":[{"position":3,"risk":"high","riskLabel":"🔴高","match":{"league":"英联赛杯","home":"德比郡","away":"林肯城"}},{"position":4,"risk":"high","riskLabel":"🔴高","match":{"league":"荷甲","home":"奈梅亨","away":"特尔斯"}},{"position":6,"risk":"high","riskLabel":"🔴高","match":{"league":"荷甲","home":"埃因霍","away":"福图纳"}},{"position":8,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"葡超","home":"马里迪","away":"卡  萨"}},{"position":9,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"葡超","home":"吉马良","away":"阿罗卡"}},{"position":12,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"挪超","home":"维  京","away":"萨  堡"}},{"position":13,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"挪超","home":"斯  达","away":"腓特烈"}},{"position":14,"risk":"high","riskLabel":"🔴高","match":{"league":"芬超","home":"雅  罗","away":"瓦  萨"}}],"safePositions":[{"position":7,"maxKey":"win","maxVal":12,"match":{"league":"荷甲","home":"阿尔克","away":"海  牙"}}]},{"issue":"26102","date":"2026-08-10","generatedAt":"2026-08-10T00:00:00.000Z","difficulty":{"totalScore":6.0815909548533895,"level":4,"levelLabel":"🔴 中高","drawScore":6.339285714285712,"cvScore":5.872414797526057,"hitScore":3.411592168694492,"entScore":9.294017495062695,"avgDrawRate":0.2535714285714285,"avgEnt":0.9294017495062695},"prizeCV":1.1744829595052113,"recent5Types":["🧊冷门期","🧊冷门期","●正常","●正常","🧊冷门期"],"riskyPositions":[{"position":3,"risk":"high","riskLabel":"🔴高","match":{"league":"荷甲","home":"海伦芬","away":"特温特"}},{"position":4,"risk":"high","riskLabel":"🔴高","match":{"league":"葡超","home":"波尔图","away":"阿维卡"}},{"position":6,"risk":"high","riskLabel":"🔴高","match":{"league":"葡超","home":"吉维森","away":"里奥阿"}},{"position":8,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"瑞超","home":"哥德堡","away":"卡尔马"}},{"position":9,"risk":"high","riskLabel":"🔴高","match":{"league":"瑞超","home":"哈尔姆","away":"盖  斯"}},{"position":11,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"挪超","home":"汉  坎","away":"奥勒松"}},{"position":12,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"挪超","home":"克里斯","away":"莫尔德"}},{"position":13,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"芬超","home":"国际图","away":"拉赫蒂"}},{"position":14,"risk":"high","riskLabel":"🔴高","match":{"league":"芬超","home":"AC奥卢","away":"赫尔辛"}}],"safePositions":[{"position":8,"maxKey":"win","maxVal":12,"match":{"league":"瑞超","home":"哥德堡","away":"卡尔马"}}]},{"issue":"26103","date":"2026-08-14","generatedAt":"2026-08-14T00:00:00.000Z","difficulty":{"totalScore":6.100487152171755,"level":4,"levelLabel":"🔴 中高","drawScore":6.696428571428572,"cvScore":5.489932043215625,"hitScore":3.4100661392020823,"entScore":9.332795175693784,"avgDrawRate":0.2678571428571429,"avgEnt":0.9332795175693783},"prizeCV":1.097986408643125,"recent5Types":["🧊冷门期","🧊冷门期","🧊冷门期","●正常","●正常"],"riskyPositions":[{"position":3,"risk":"high","riskLabel":"🔴高","match":{"league":"欧冠","home":"萨巴赫","away":"奥胡斯"}},{"position":4,"risk":"high","riskLabel":"🔴高","match":{"league":"欧冠","home":"奈梅亨","away":"奥林匹"}},{"position":6,"risk":"high","riskLabel":"🔴高","match":{"league":"欧冠","home":"格拉茨","away":"费内巴"}},{"position":8,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"欧罗巴","home":"帕福斯","away":"萨茨堡"}},{"position":9,"risk":"high","riskLabel":"🔴高","match":{"league":"欧罗巴","home":"克大学","away":"库奥皮"}},{"position":12,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"欧罗巴","home":"流浪者","away":"比亚韦"}},{"position":13,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"欧罗巴","home":"哈  茨","away":"本菲卡"}},{"position":14,"risk":"high","riskLabel":"🔴高","match":{"league":"欧超杯","home":"日尔曼","away":"维  拉"}}],"safePositions":[{"position":11,"maxKey":"win","maxVal":12,"match":{"league":"欧罗巴","home":"安德莱","away":"塞萨洛"}}]},{"issue":"26104","date":"2026-08-15","generatedAt":"2026-08-15T00:00:00.000Z","difficulty":{"totalScore":6.142096328126259,"level":4,"levelLabel":"🔴 中高","drawScore":6.607142857142858,"cvScore":5.342331644250499,"hitScore":3.825960025113649,"entScore":9.339402768211826,"avgDrawRate":0.26428571428571435,"avgEnt":0.9339402768211826},"prizeCV":1.0684663288500997,"recent5Types":["●正常","🧊冷门期","🧊冷门期","🧊冷门期","●正常"],"riskyPositions":[{"position":3,"risk":"high","riskLabel":"🔴高","match":{"league":"德乙","home":"基  尔","away":"圣保利"}},{"position":4,"risk":"high","riskLabel":"🔴高","match":{"league":"法乙","home":"阿纳西","away":"罗德兹"}},{"position":6,"risk":"high","riskLabel":"🔴高","match":{"league":"法乙","home":"第  戎","away":"波城FC"}},{"position":7,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"法乙","home":"格勒诺","away":"梅  斯"}},{"position":8,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"法乙","home":"甘  冈","away":"布洛涅"}},{"position":9,"risk":"high","riskLabel":"🔴高","match":{"league":"法乙","home":"兰  斯","away":"敦刻克"}},{"position":12,"risk":"medium_draw","riskLabel":"⚠平局陷阱","match":{"league":"葡超","home":"里斯本","away":"吉马良"}},{"position":13,"risk":"high","riskLabel":"🔴高","match":{"league":"瑞超","home":"埃尔夫","away":"韦斯罗"}},{"position":14,"risk":"high","riskLabel":"🔴高","match":{"league":"挪超","home":"罗森博","away":"维  京"}}],"safePositions":[{"position":8,"maxKey":"win","maxVal":12,"match":{"league":"法乙","home":"甘  冈","away":"布洛涅"}}]}],"riskyPositions":[{"position":3,"counts":{"win":6,"draw":5,"lose":9,"star":0},"total":20,"ent":0.9713107216099232,"maxKey":"lose","maxVal":9,"minKey":"draw","minVal":5,"risk":"high","riskLabel":"🔴高","latestMatch":{"league":"英冠","home":"诺维奇","away":"西布罗"}},{"position":4,"counts":{"win":6,"draw":6,"lose":8,"star":0},"total":20,"ent":0.9911594714322188,"maxKey":"lose","maxVal":8,"minKey":"win","minVal":6,"risk":"high","riskLabel":"🔴高","latestMatch":{"league":"英冠","home":"斯托克","away":"斯旺西"}},{"position":6,"counts":{"win":6,"draw":5,"lose":9,"star":0},"total":20,"ent":0.9713107216099232,"maxKey":"lose","maxVal":9,"minKey":"draw","minVal":5,"risk":"high","riskLabel":"🔴高","latestMatch":{"league":"西甲","home":"阿拉维","away":"赫塔费"}},{"position":7,"counts":{"win":12,"draw":5,"lose":3,"star":0},"total":20,"ent":0.8534739433956114,"maxKey":"win","maxVal":12,"minKey":"lose","minVal":3,"risk":"medium_draw","riskLabel":"⚠平局陷阱","latestMatch":{"league":"西甲","home":"塞维利","away":"巴列卡"}},{"position":8,"counts":{"win":11,"draw":7,"lose":2,"star":0},"total":20,"ent":0.8433426540429226,"maxKey":"win","maxVal":11,"minKey":"lose","minVal":2,"risk":"medium_draw","riskLabel":"⚠平局陷阱","latestMatch":{"league":"荷甲","home":"威  廉","away":"奈梅亨"}},{"position":9,"counts":{"win":9,"draw":5,"lose":6,"star":0},"total":20,"ent":0.9713107216099232,"maxKey":"win","maxVal":9,"minKey":"draw","minVal":5,"risk":"high","riskLabel":"🔴高","latestMatch":{"league":"荷甲","home":"乌德勒","away":"阿尔克"}},{"position":12,"counts":{"win":9,"draw":6,"lose":4,"star":1},"total":19,"ent":0.9520903566147751,"maxKey":"win","maxVal":9,"minKey":"lose","minVal":4,"risk":"medium_draw","riskLabel":"⚠平局陷阱","latestMatch":{"league":"葡超","home":"阿维卡","away":"阿马多"}},{"position":13,"counts":{"win":5,"draw":9,"lose":6,"star":0},"total":20,"ent":0.9713107216099232,"maxKey":"draw","maxVal":9,"minKey":"win","minVal":5,"risk":"high","riskLabel":"🔴高","latestMatch":{"league":"葡超","home":"维塞乌","away":"圣克拉"}}],"safePositions":[{"position":7,"counts":{"win":12,"draw":5,"lose":3,"star":0},"total":20,"ent":0.8534739433956114,"maxKey":"win","maxVal":12,"minKey":"lose","minVal":3,"risk":"medium_draw","riskLabel":"⚠平局陷阱","latestMatch":{"league":"西甲","home":"塞维利","away":"巴列卡"}}],"comparison":{"generatedAt":"2026-08-16T09:52:26.491Z","summary":{"totalPeriods":35,"riskTotal":174,"riskHit":98,"riskHitRate":56.3,"safeTotal":23,"safeHit":17,"safeHitRate":73.9,"overallTotal":197,"overallHit":115,"overallHitRate":58.4},"periods":[{"issue":"26105","date":"2026-08-16","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.0590606237999225},"realResults":[0,3,0,0,1,3,3,0,0,0,3,1,0,0],"riskTotal":8,"riskHit":5,"riskHitRate":62.5,"safeTotal":1,"safeHit":1,"safeHitRate":100,"overallTotal":9,"overallHit":6,"overallHitRate":66.7,"riskCheck":[{"position":3,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"英冠","home":"诺维奇","away":"西布罗","score":"1:2"}},{"position":4,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"英冠","home":"斯托克","away":"斯旺西","score":"1:2"}},{"position":6,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"西甲","home":"阿拉维","away":"赫塔费","score":"3:0"}},{"position":7,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"西甲","home":"塞维利","away":"巴列卡","score":"2:1"}},{"position":8,"maxKey":"win","realKey":"lose","realResult":0,"hit":true,"match":{"league":"荷甲","home":"威  廉","away":"奈梅亨","score":"1:4"}},{"position":9,"maxKey":"win","realKey":"lose","realResult":0,"hit":true,"match":{"league":"荷甲","home":"乌德勒","away":"阿尔克","score":"1:4"}},{"position":12,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"葡超","home":"阿维卡","away":"阿马多","score":"2:2"}},{"position":13,"maxKey":"draw","realKey":"lose","realResult":0,"hit":true,"match":{"league":"葡超","home":"维塞乌","away":"圣克拉","score":"0:1"}}],"safeCheck":[{"position":7,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"西甲","home":"塞维利","away":"巴列卡","score":"2:1"}}]},{"issue":"26104","date":"2026-08-15","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.142096328126259},"realResults":[1,0,1,3,0,0,1,3,1,3,0,3,3,3],"riskTotal":9,"riskHit":5,"riskHitRate":55.6,"safeTotal":1,"safeHit":1,"safeHitRate":100,"overallTotal":10,"overallHit":6,"overallHitRate":60,"riskCheck":[{"position":3,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"德乙","home":"基  尔","away":"圣保利","score":"2:2"}},{"position":4,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"法乙","home":"阿纳西","away":"罗德兹","score":"2:0"}},{"position":6,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"法乙","home":"第  戎","away":"波城FC","score":"0:1"}},{"position":7,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"法乙","home":"格勒诺","away":"梅  斯","score":"0:0"}},{"position":8,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"法乙","home":"甘  冈","away":"布洛涅","score":"1:0"}},{"position":9,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"法乙","home":"兰  斯","away":"敦刻克","score":"3:3"}},{"position":12,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"葡超","home":"里斯本","away":"吉马良","score":"3:2"}},{"position":13,"maxKey":"draw","realKey":"win","realResult":3,"hit":true,"match":{"league":"瑞超","home":"埃尔夫","away":"韦斯罗","score":"3:0"}},{"position":14,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"挪超","home":"罗森博","away":"维  京","score":"2:1"}}],"safeCheck":[{"position":8,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"法乙","home":"甘  冈","away":"布洛涅","score":"1:0"}}]},{"issue":"26103","date":"2026-08-14","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.100487152171755},"realResults":[0,1,3,1,3,0,3,1,3,3,3,1,1,3],"riskTotal":8,"riskHit":4,"riskHitRate":50,"safeTotal":1,"safeHit":1,"safeHitRate":100,"overallTotal":9,"overallHit":5,"overallHitRate":55.6,"riskCheck":[{"position":3,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"欧冠","home":"萨巴赫","away":"奥胡斯","score":"4:0"}},{"position":4,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"欧冠","home":"奈梅亨","away":"奥林匹","score":"1:1"}},{"position":6,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"欧冠","home":"格拉茨","away":"费内巴","score":"0:1"}},{"position":8,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"欧罗巴","home":"帕福斯","away":"萨茨堡","score":"3:3"}},{"position":9,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"欧罗巴","home":"克大学","away":"库奥皮","score":"2:1"}},{"position":12,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"欧罗巴","home":"流浪者","away":"比亚韦","score":"1:1"}},{"position":13,"maxKey":"draw","realKey":"draw","realResult":1,"hit":false,"match":{"league":"欧罗巴","home":"哈  茨","away":"本菲卡","score":"1:1"}},{"position":14,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"欧超杯","home":"日尔曼","away":"维  拉","score":"2:1"}}],"safeCheck":[{"position":11,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"欧罗巴","home":"安德莱","away":"塞萨洛","score":"3:2"}}]},{"issue":"26102","date":"2026-08-10","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.0815909548533895},"realResults":[3,0,3,3,1,3,1,3,0,0,1,3,1,0],"riskTotal":9,"riskHit":6,"riskHitRate":66.7,"safeTotal":1,"safeHit":1,"safeHitRate":100,"overallTotal":10,"overallHit":7,"overallHitRate":70,"riskCheck":[{"position":3,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"荷甲","home":"海伦芬","away":"特温特","score":"1:0"}},{"position":4,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"葡超","home":"波尔图","away":"阿维卡","score":"2:0"}},{"position":6,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"葡超","home":"吉维森","away":"里奥阿","score":"1:0"}},{"position":8,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"瑞超","home":"哥德堡","away":"卡尔马","score":"3:2"}},{"position":9,"maxKey":"win","realKey":"lose","realResult":0,"hit":true,"match":{"league":"瑞超","home":"哈尔姆","away":"盖  斯","score":"0:2"}},{"position":11,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"挪超","home":"汉  坎","away":"奥勒松","score":"1:1"}},{"position":12,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"挪超","home":"克里斯","away":"莫尔德","score":"2:1"}},{"position":13,"maxKey":"draw","realKey":"draw","realResult":1,"hit":false,"match":{"league":"芬超","home":"国际图","away":"拉赫蒂","score":"0:0"}},{"position":14,"maxKey":"win","realKey":"lose","realResult":0,"hit":true,"match":{"league":"芬超","home":"AC奥卢","away":"赫尔辛","score":"0:1"}}],"safeCheck":[{"position":8,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"瑞超","home":"哥德堡","away":"卡尔马","score":"3:2"}}]},{"issue":"26101","date":"2026-08-09","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.210564483314179},"realResults":[0,3,0,0,3,1,3,3,0,1,0,3,0,0],"riskTotal":8,"riskHit":4,"riskHitRate":50,"safeTotal":1,"safeHit":1,"safeHitRate":100,"overallTotal":9,"overallHit":5,"overallHitRate":55.6,"riskCheck":[{"position":3,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"英联赛杯","home":"德比郡","away":"林肯城","score":"1:2"}},{"position":4,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"荷甲","home":"奈梅亨","away":"特尔斯","score":"1:2"}},{"position":6,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"荷甲","home":"埃因霍","away":"福图纳","score":"2:2"}},{"position":8,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"葡超","home":"马里迪","away":"卡  萨","score":"1:0"}},{"position":9,"maxKey":"win","realKey":"lose","realResult":0,"hit":true,"match":{"league":"葡超","home":"吉马良","away":"阿罗卡","score":"0:1"}},{"position":12,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"挪超","home":"维  京","away":"萨  堡","score":"2:1"}},{"position":13,"maxKey":"draw","realKey":"lose","realResult":0,"hit":true,"match":{"league":"挪超","home":"斯  达","away":"腓特烈","score":"0:1"}},{"position":14,"maxKey":"win","realKey":"lose","realResult":0,"hit":true,"match":{"league":"芬超","home":"雅  罗","away":"瓦  萨","score":"1:3"}}],"safeCheck":[{"position":7,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"荷甲","home":"阿尔克","away":"海  牙","score":"2:0"}}]},{"issue":"26100","date":"2026-08-07","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.301431373853869},"realResults":[3,0,3,1,3,1,3,3,1,3,3,0,3,3],"riskTotal":8,"riskHit":6,"riskHitRate":75,"safeTotal":2,"safeHit":2,"safeHitRate":100,"overallTotal":10,"overallHit":8,"overallHitRate":80,"riskCheck":[{"position":3,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"欧冠","home":"索斯基","away":"阿拉木","score":"1:0"}},{"position":4,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"欧冠","home":"奥林匹","away":"奈梅亨","score":"0:0"}},{"position":6,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"欧冠","home":"圣吉联","away":"博  德","score":"3:3"}},{"position":8,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"欧冠","home":"费内巴","away":"格拉茨","score":"2:0"}},{"position":9,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"欧罗巴","home":"库奥皮","away":"克大学","score":"1:1"}},{"position":12,"maxKey":"win","realKey":"lose","realResult":0,"hit":true,"match":{"league":"欧罗巴","home":"塞萨洛","away":"安德莱","score":"0:1"}},{"position":13,"maxKey":"draw","realKey":"win","realResult":3,"hit":true,"match":{"league":"欧罗巴","home":"图  恩","away":"雷维京","score":"3:0"}},{"position":14,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"欧罗巴","home":"本菲卡","away":"哈  茨","score":"6:1"}}],"safeCheck":[{"position":7,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"欧冠","home":"奥胡斯","away":"萨巴赫","score":"2:1"}},{"position":11,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"欧罗巴","home":"萨茨堡","away":"帕福斯","score":"1:0"}}]},{"issue":"26099","date":"2026-08-04","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.255852712065427},"realResults":[0,3,0,3,0,0,3,1,3,0,3,3,1,3],"riskTotal":10,"riskHit":2,"riskHitRate":20,"safeTotal":1,"safeHit":1,"safeHitRate":100,"overallTotal":11,"overallHit":3,"overallHitRate":27.3,"riskCheck":[{"position":1,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"瑞超","home":"布鲁马","away":"马尔默","score":"1:2"}},{"position":3,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"瑞超","home":"索尔纳","away":"厄格里","score":"0:3"}},{"position":4,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"瑞超","home":"佐加顿","away":"韦斯罗","score":"6:0"}},{"position":6,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"挪超","home":"奥勒松","away":"特罗姆","score":"2:6"}},{"position":8,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"挪超","home":"莫尔德","away":"萨  堡","score":"3:3"}},{"position":9,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"挪超","home":"布  兰","away":"罗森博","score":"3:2"}},{"position":11,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"芬超","home":"AC奥卢","away":"坦山猫","score":"1:0"}},{"position":12,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"芬超","home":"塞伊奈","away":"赫尔辛","score":"3:0"}},{"position":13,"maxKey":"draw","realKey":"draw","realResult":1,"hit":false,"match":{"league":"巴西杯","home":"米拉索","away":"格雷米","score":"1:1"}},{"position":14,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"巴西杯","home":"巴拉竞","away":"维多利","score":"2:0"}}],"safeCheck":[{"position":7,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"挪超","home":"奥斯KF","away":"克里斯","score":"2:1"}}]},{"issue":"26098","date":"2026-08-02","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.2812126203889935},"realResults":[1,3,0,3,0,1,1,3,1,1,1,1,3,1],"riskTotal":10,"riskHit":8,"riskHitRate":80,"safeTotal":1,"safeHit":0,"safeHitRate":0,"overallTotal":11,"overallHit":8,"overallHitRate":72.7,"riskCheck":[{"position":1,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"瑞超","home":"赫  根","away":"卡尔马","score":"1:1"}},{"position":3,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"挪超","home":"斯  达","away":"维  京","score":"0:3"}},{"position":4,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"芬超","home":"拉赫蒂","away":"雅  罗","score":"2:0"}},{"position":6,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"巴西杯","home":"达伽马","away":"弗鲁米","score":"0:0"}},{"position":8,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"美职","home":"辛辛那","away":"圣何塞","score":"4:2"}},{"position":9,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"美职","home":"华盛顿","away":"纳什维","score":"2:2"}},{"position":11,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"美职","home":"蒙特利","away":"新英格","score":"2:2"}},{"position":12,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"美职","home":"温哥华","away":"洛杉FC","score":"1:1"}},{"position":13,"maxKey":"draw","realKey":"win","realResult":3,"hit":true,"match":{"league":"美职","home":"芝加哥","away":"夏洛特","score":"2:1"}},{"position":14,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"美职","home":"圣路易","away":"盐湖城","score":"1:1"}}],"safeCheck":[{"position":7,"maxKey":"win","realKey":"draw","realResult":1,"hit":false,"match":{"league":"巴西杯","home":"桑托斯","away":"里  莫","score":"0:0"}}]},{"issue":"26097","date":"2026-07-31","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.203693290239474},"realResults":[0,0,3,0,0,3,3,1,3,1,3,1,0,1],"riskTotal":8,"riskHit":5,"riskHitRate":62.5,"safeTotal":2,"safeHit":1,"safeHitRate":50,"overallTotal":10,"overallHit":6,"overallHitRate":60,"riskCheck":[{"position":3,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"欧冠","home":"阿拉木","away":"奥莫尼","score":"1:0"}},{"position":4,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"欧冠","home":"波兹南","away":"奥胡斯","score":"0:3"}},{"position":6,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"欧罗巴","home":"帕福斯","away":"海杜克","score":"2:0"}},{"position":8,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"欧罗巴","home":"费伦茨","away":"特温特","score":"2:2"}},{"position":9,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"欧罗巴","home":"本菲卡","away":"圣加仑","score":"5:0"}},{"position":11,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"巴甲","home":"米拉索","away":"里  莫","score":"2:1"}},{"position":13,"maxKey":"draw","realKey":"lose","realResult":0,"hit":true,"match":{"league":"巴甲","home":"维多利","away":"帕尔梅","score":"0:4"}},{"position":14,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"巴甲","home":"科林蒂","away":"巴拉竞","score":"0:0"}}],"safeCheck":[{"position":7,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"欧罗巴","home":"安德莱","away":"哈马比","score":"3:1"}},{"position":10,"maxKey":"win","realKey":"draw","realResult":1,"hit":false,"match":{"league":"巴甲","home":"巴国际","away":"弗拉门","score":"1:1"}}]},{"issue":"26096","date":"2026-07-27","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.257146556888175},"realResults":[1,3,1,0,0,0,0,3,1,3,0,3,1,1],"riskTotal":8,"riskHit":4,"riskHitRate":50,"safeTotal":2,"safeHit":1,"safeHitRate":50,"overallTotal":10,"overallHit":5,"overallHitRate":50,"riskCheck":[{"position":1,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"瑞超","home":"布鲁马","away":"哈马比","score":"1:1"}},{"position":3,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"瑞超","home":"盖  斯","away":"哈尔姆","score":"1:1"}},{"position":4,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"瑞超","home":"马尔默","away":"埃尔夫","score":"1:2"}},{"position":6,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"挪超","home":"奥斯KF","away":"莫尔德","score":"2:4"}},{"position":8,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"挪超","home":"萨  堡","away":"汉  坎","score":"1:0"}},{"position":9,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"挪超","home":"奥勒松","away":"维  京","score":"1:1"}},{"position":11,"maxKey":"win","realKey":"lose","realResult":0,"hit":true,"match":{"league":"芬超","home":"国际图","away":"赫火花","score":"1:2"}},{"position":13,"maxKey":"draw","realKey":"draw","realResult":1,"hit":false,"match":{"league":"巴甲","home":"弗拉门","away":"圣保罗","score":"1:1"}}],"safeCheck":[{"position":7,"maxKey":"win","realKey":"lose","realResult":0,"hit":false,"match":{"league":"挪超","home":"桑纳菲","away":"博  德","score":"0:3"}},{"position":10,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"芬超","home":"坦山猫","away":"拉赫蒂","score":"1:0"}}]},{"issue":"26095","date":"2026-07-26","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.15621456768354},"realResults":[0,3,0,1,3,3,1,1,0,3,1,3,3,1],"riskTotal":6,"riskHit":5,"riskHitRate":83.3,"safeTotal":1,"safeHit":0,"safeHitRate":0,"overallTotal":7,"overallHit":5,"overallHitRate":71.4,"riskCheck":[{"position":3,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"挪超","home":"克里斯","away":"斯  达","score":"1:2"}},{"position":4,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"芬超","home":"玛丽港","away":"AC奥卢","score":"1:1"}},{"position":6,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"巴甲","home":"巴拉竞","away":"巴国际","score":"2:0"}},{"position":8,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"巴甲","home":"达伽马","away":"米拉索","score":"1:1"}},{"position":11,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"美职","home":"明尼苏","away":"温哥华","score":"0:0"}},{"position":13,"maxKey":"draw","realKey":"win","realResult":3,"hit":true,"match":{"league":"美职","home":"圣迭戈","away":"达拉斯","score":"1:0"}}],"safeCheck":[{"position":7,"maxKey":"win","realKey":"draw","realResult":1,"hit":false,"match":{"league":"巴甲","home":"桑托斯","away":"沙佩科","score":"2:2"}}]},{"issue":"26094","date":"2026-07-24","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.15998716814423},"realResults":[3,0,3,1,3,0,3,3,0,1,0,0,1,3],"riskTotal":6,"riskHit":3,"riskHitRate":50,"safeTotal":2,"safeHit":1,"safeHitRate":50,"overallTotal":8,"overallHit":4,"overallHitRate":50,"riskCheck":[{"position":3,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"欧冠","home":"格拉茨","away":"哈  茨","score":"4:0"}},{"position":4,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"欧罗巴","home":"哈马比","away":"安德莱","score":"1:1"}},{"position":6,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"欧罗巴","home":"特温特","away":"费伦茨","score":"1:2"}},{"position":8,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"挪超","home":"博  德","away":"汉  坎","score":"3:0"}},{"position":11,"maxKey":"win","realKey":"lose","realResult":0,"hit":true,"match":{"league":"巴甲","home":"沙佩科","away":"弗拉门","score":"0:4"}},{"position":13,"maxKey":"draw","realKey":"draw","realResult":1,"hit":false,"match":{"league":"巴甲","home":"博塔弗","away":"维多利","score":"0:0"}}],"safeCheck":[{"position":7,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"欧罗巴","home":"圣加仑","away":"本菲卡","score":"2:1"}},{"position":9,"maxKey":"win","realKey":"lose","realResult":0,"hit":false,"match":{"league":"挪超","home":"利勒斯","away":"维  京","score":"1:2"}}]},{"issue":"26093","date":"2026-07-21","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.390742749590909},"realResults":[0,1,0,0,3,1,1,1,3,0,0,3,0,0],"riskTotal":9,"riskHit":5,"riskHitRate":55.6,"safeTotal":2,"safeHit":1,"safeHitRate":50,"overallTotal":11,"overallHit":6,"overallHitRate":54.5,"riskCheck":[{"position":1,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"世界杯","home":"法  国","away":"英格兰","score":"4:6"}},{"position":2,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"世界杯","home":"西班牙","away":"阿根廷","score":"0:0"}},{"position":3,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"瑞超","home":"埃尔夫","away":"天狼星","score":"1:3"}},{"position":4,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"瑞超","home":"哈尔姆","away":"赫  根","score":"0:2"}},{"position":6,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"瑞超","home":"卡尔马","away":"马尔默","score":"2:2"}},{"position":8,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"挪超","home":"克里斯","away":"萨  堡","score":"0:0"}},{"position":9,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"挪超","home":"利勒斯","away":"奥斯KF","score":"2:1"}},{"position":11,"maxKey":"win","realKey":"lose","realResult":0,"hit":true,"match":{"league":"挪超","home":"莫尔德","away":"布  兰","score":"1:2"}},{"position":13,"maxKey":"draw","realKey":"lose","realResult":0,"hit":true,"match":{"league":"芬超","home":"AC奥卢","away":"赫火花","score":"0:2"}}],"safeCheck":[{"position":7,"maxKey":"win","realKey":"draw","realResult":1,"hit":false,"match":{"league":"瑞超","home":"厄格里","away":"佐加顿","score":"0:0"}},{"position":9,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"挪超","home":"利勒斯","away":"奥斯KF","score":"2:1"}}]},{"issue":"26092","date":"2026-07-21","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.391791175408464},"realResults":[0,0,1,0,0,0,3,3,3,3,1,"*",3,0],"riskTotal":9,"riskHit":3,"riskHitRate":33.3,"safeTotal":1,"safeHit":1,"safeHitRate":100,"overallTotal":10,"overallHit":4,"overallHitRate":40,"riskCheck":[{"position":1,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"世界杯","home":"法  国","away":"西班牙","score":"0:2"}},{"position":2,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"世界杯","home":"英格兰","away":"阿根廷","score":"1:2"}},{"position":3,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"欧冠","home":"杰  尔","away":"雷维京","score":"2:2"}},{"position":4,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"欧冠","home":"新圣徒","away":"萨巴赫","score":"1:2"}},{"position":6,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"欧冠","home":"苏捷斯","away":"阿拉木","score":"0:2"}},{"position":8,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"挪超","home":"瓦勒伦","away":"奥勒松","score":"6:1"}},{"position":9,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"巴甲","home":"博塔弗","away":"桑托斯","score":"2:1"}},{"position":11,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"美职","home":"蒙特利","away":"多伦多","score":"0:0"}},{"position":13,"maxKey":"draw","realKey":"win","realResult":3,"hit":true,"match":{"league":"美职","home":"圣路易","away":"堪萨斯","score":"3:2"}}],"safeCheck":[{"position":7,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"欧罗巴","home":"费伦茨","away":"伏伊伏","score":"3:0"}}]},{"issue":"26091","date":"2026-07-13","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.397072880858461},"realResults":[3,3,1,1,0,0,3,0,1,3,3,3,1,3],"riskTotal":9,"riskHit":6,"riskHitRate":66.7,"safeTotal":1,"safeHit":1,"safeHitRate":100,"overallTotal":10,"overallHit":7,"overallHitRate":70,"riskCheck":[{"position":1,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"世界杯","home":"法  国","away":"摩洛哥","score":"2:0"}},{"position":2,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"世界杯","home":"西班牙","away":"比利时","score":"2:1"}},{"position":3,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"世界杯","home":"挪  威","away":"英格兰","score":"1:1"}},{"position":4,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"世界杯","home":"阿根廷","away":"瑞  士","score":"1:1"}},{"position":6,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"瑞超","home":"布鲁马","away":"天狼星","score":"1:2"}},{"position":8,"maxKey":"win","realKey":"lose","realResult":0,"hit":true,"match":{"league":"挪超","home":"腓特烈","away":"利勒斯","score":"0:2"}},{"position":9,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"挪超","home":"奥勒松","away":"莫尔德","score":"2:2"}},{"position":11,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"挪超","home":"布  兰","away":"斯  达","score":"2:1"}},{"position":13,"maxKey":"draw","realKey":"draw","realResult":1,"hit":false,"match":{"league":"挪超","home":"桑纳菲","away":"汉  坎","score":"2:2"}}],"safeCheck":[{"position":7,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"瑞超","home":"盖  斯","away":"埃尔夫","score":"1:0"}}]},{"issue":"26090","date":"2026-07-08","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.152633986231409},"realResults":[0,0,0,0,0,0,3,1,3,0,3,0,1,0],"riskTotal":7,"riskHit":1,"riskHitRate":14.3,"safeTotal":2,"safeHit":2,"safeHitRate":100,"overallTotal":9,"overallHit":3,"overallHitRate":33.3,"riskCheck":[{"position":1,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"世界杯","home":"加拿大","away":"摩洛哥","score":"0:3"}},{"position":2,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"世界杯","home":"巴拉圭","away":"法  国","score":"0:1"}},{"position":3,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"世界杯","home":"巴  西","away":"挪  威","score":"1:2"}},{"position":6,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"世界杯","home":"美  国","away":"比利时","score":"1:4"}},{"position":8,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"世界杯","home":"瑞  士","away":"哥伦比","score":"0:0"}},{"position":11,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"瑞超","home":"卡尔马","away":"厄格里","score":"3:0"}},{"position":13,"maxKey":"draw","realKey":"draw","realResult":1,"hit":false,"match":{"league":"瑞超","home":"布鲁马","away":"盖  斯","score":"1:1"}}],"safeCheck":[{"position":7,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"世界杯","home":"阿根廷","away":"埃  及","score":"3:2"}},{"position":9,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"欧冠","home":"雷维京","away":"杰  尔","score":"1:0"}}]},{"issue":"26089","date":"2026-07-04","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.098262648918175},"realResults":[3,1,1,0,3,3,3,3,3,3,3,1,1,3],"riskTotal":7,"riskHit":4,"riskHitRate":57.1,"safeTotal":1,"safeHit":1,"safeHitRate":100,"overallTotal":8,"overallHit":5,"overallHitRate":62.5,"riskCheck":[{"position":1,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"世界杯","home":"巴  西","away":"日  本","score":"2:1"}},{"position":2,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"世界杯","home":"德  国","away":"巴拉圭","score":"1:1"}},{"position":3,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"世界杯","home":"荷  兰","away":"摩洛哥","score":"1:1"}},{"position":6,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"世界杯","home":"墨西哥","away":"厄瓜多","score":"2:0"}},{"position":8,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"世界杯","home":"美  国","away":"波  黑","score":"2:0"}},{"position":11,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"世界杯","home":"瑞  士","away":"阿尔及","score":"2:0"}},{"position":13,"maxKey":"draw","realKey":"draw","realResult":1,"hit":false,"match":{"league":"世界杯","home":"阿根廷","away":"佛得角","score":"1:1"}}],"safeCheck":[{"position":7,"maxKey":"win","realKey":"win","realResult":3,"hit":true,"match":{"league":"世界杯","home":"英格兰","away":"刚果金","score":"2:1"}}]},{"issue":"26088","date":"2026-06-28","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.064732944022491},"realResults":[3,0,0,3,3,1,0,3,0,0,3,0,1,0],"riskTotal":6,"riskHit":2,"riskHitRate":33.3,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":6,"overallHit":2,"overallHitRate":33.3,"riskCheck":[{"position":1,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"世界杯","home":"瑞  士","away":"加拿大","score":"2:1"}},{"position":2,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"世界杯","home":"苏格兰","away":"巴  西","score":"0:3"}},{"position":3,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"世界杯","home":"捷  克","away":"墨西哥","score":"0:3"}},{"position":6,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"世界杯","home":"日  本","away":"瑞  典","score":"1:1"}},{"position":8,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"世界杯","home":"土耳其","away":"美  国","score":"3:2"}},{"position":11,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"世界杯","home":"克罗地","away":"加  纳","score":"2:1"}}],"safeCheck":[]},{"issue":"26087","date":"2026-06-24","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.028125477355877},"realResults":[3,3,0,3,1,0,3,3,3,0,3,1,0,3],"riskTotal":6,"riskHit":2,"riskHitRate":33.3,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":6,"overallHit":2,"overallHitRate":33.3,"riskCheck":[{"position":1,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"世界杯","home":"荷  兰","away":"瑞  典","score":"5:1"}},{"position":2,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"世界杯","home":"德  国","away":"科特迪","score":"2:1"}},{"position":3,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"世界杯","home":"突尼斯","away":"日  本","score":"0:4"}},{"position":6,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"世界杯","home":"新西兰","away":"埃  及","score":"1:3"}},{"position":8,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"世界杯","home":"法  国","away":"伊拉克","score":"3:0"}},{"position":11,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"世界杯","home":"葡萄牙","away":"乌兹别","score":"5:0"}}],"safeCheck":[]},{"issue":"26086","date":"2026-06-20","difficulty":{"level":3,"levelLabel":"🟠 中等","totalScore":5.9447396334932705},"realResults":[3,0,3,1,3,3,0,1,3,3,3,3,0,0],"riskTotal":6,"riskHit":4,"riskHitRate":66.7,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":6,"overallHit":4,"overallHitRate":66.7,"riskCheck":[{"position":1,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"世界杯","home":"法  国","away":"塞内加","score":"3:1"}},{"position":2,"maxKey":"lose","realKey":"lose","realResult":0,"hit":false,"match":{"league":"世界杯","home":"伊拉克","away":"挪  威","score":"1:4"}},{"position":3,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"世界杯","home":"阿根廷","away":"阿尔及","score":"3:0"}},{"position":6,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"世界杯","home":"加  纳","away":"巴拿马","score":"1:0"}},{"position":8,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"世界杯","home":"捷  克","away":"南  非","score":"1:1"}},{"position":11,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"世界杯","home":"墨西哥","away":"韩  国","score":"1:0"}}],"safeCheck":[]},{"issue":"26085","date":"2026-06-16","difficulty":{"level":4,"levelLabel":"🔴 中高","totalScore":6.035567307713999},"realResults":[3,3,1,3,1,1,0,3,1,3,3,1,1,1],"riskTotal":6,"riskHit":4,"riskHitRate":66.7,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":6,"overallHit":4,"overallHitRate":66.7,"riskCheck":[{"position":1,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"世界杯","home":"墨西哥","away":"南  非","score":"2:0"}},{"position":2,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"世界杯","home":"韩  国","away":"捷  克","score":"2:1"}},{"position":3,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"世界杯","home":"加拿大","away":"波  黑","score":"1:1"}},{"position":6,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"世界杯","home":"巴  西","away":"摩洛哥","score":"1:1"}},{"position":8,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"世界杯","home":"澳大利","away":"土耳其","score":"2:0"}},{"position":11,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"世界杯","home":"瑞  典","away":"突尼斯","score":"5:1"}}],"safeCheck":[]},{"issue":"26084","date":"2026-06-08","difficulty":{"level":3,"levelLabel":"🟠 中等","totalScore":5.828742700238152},"realResults":[1,3,1,3,3,3,0,1,1,3,3,3,0,1],"riskTotal":5,"riskHit":4,"riskHitRate":80,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":5,"overallHit":4,"overallHitRate":80,"riskCheck":[{"position":1,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"国际赛","home":"斯洛伐","away":"黑  山","score":"2:2"}},{"position":2,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"国际赛","home":"匈牙利","away":"芬  兰","score":"2:1"}},{"position":6,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"国际赛","home":"罗马尼","away":"威尔士","score":"2:1"}},{"position":8,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"国际赛","home":"澳大利","away":"瑞  士","score":"1:1"}},{"position":11,"maxKey":"win","realKey":"win","realResult":3,"hit":false,"match":{"league":"国际赛","home":"巴  西","away":"埃  及","score":"2:1"}}],"safeCheck":[]},{"issue":"26083","date":"2026-06-02","difficulty":{"level":3,"levelLabel":"🟠 中等","totalScore":5.7981967391453315},"realResults":[3,3,3,3,0,3,3,3,3,3,1,3,0,3],"riskTotal":3,"riskHit":3,"riskHitRate":100,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":3,"overallHit":3,"overallHitRate":100,"riskCheck":[{"position":2,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"国际赛","home":"德  国","away":"芬  兰","score":"4:0"}},{"position":6,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"国际赛","home":"挪  威","away":"瑞  典","score":"3:1"}},{"position":11,"maxKey":"win","realKey":"draw","realResult":1,"hit":true,"match":{"league":"瑞超","home":"代格福","away":"布鲁马","score":"2:2"}}],"safeCheck":[]},{"issue":"26082","date":"2026-05-31","difficulty":{"level":3,"levelLabel":"🟠 中等","totalScore":5.755539530019433},"realResults":[1,3,0,3,3,1,3,1,1,3,0,3,1,3],"riskTotal":2,"riskHit":2,"riskHitRate":100,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":2,"overallHit":2,"overallHitRate":100,"riskCheck":[{"position":2,"maxKey":"lose","realKey":"win","realResult":3,"hit":true,"match":{"league":"法甲","home":"尼  斯","away":"埃蒂安","score":"4:1"}},{"position":6,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"挪超","home":"奥勒松","away":"汉  坎","score":"2:2"}}],"safeCheck":[]},{"issue":"26081","date":"2026-05-28","difficulty":{"level":3,"levelLabel":"🟠 中等","totalScore":5.531505230572989},"realResults":[3,1,3,1,1,3,3,1,3,1,3,3,3,0],"riskTotal":1,"riskHit":1,"riskHitRate":100,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":1,"overallHit":1,"overallHitRate":100,"riskCheck":[{"position":2,"maxKey":"lose","realKey":"draw","realResult":1,"hit":true,"match":{"league":"德甲","home":"帕德博","away":"沃尔夫","score":"1:1"}}],"safeCheck":[]},{"issue":"26080","date":"2026-05-25","difficulty":{"level":3,"levelLabel":"🟠 中等","totalScore":5.459134939644191},"realResults":[1,0,3,1,0,1,3,3,3,0,1,0,3,0],"riskTotal":0,"riskHit":0,"riskHitRate":null,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":0,"overallHit":0,"overallHitRate":null,"riskCheck":[],"safeCheck":[]},{"issue":"26079","date":"2026-05-24","difficulty":{"level":3,"levelLabel":"🟠 中等","totalScore":5.436628419140909},"realResults":[3,1,3,3,3,1,3,0,3,3,3,3,3,0],"riskTotal":0,"riskHit":0,"riskHitRate":null,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":0,"overallHit":0,"overallHitRate":null,"riskCheck":[],"safeCheck":[]},{"issue":"26078","date":"2026-05-21","difficulty":{"level":3,"levelLabel":"🟠 中等","totalScore":5.416270990981764},"realResults":[0,3,1,3,0,0,3,0,0,3,1,0,3,3],"riskTotal":0,"riskHit":0,"riskHitRate":null,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":0,"overallHit":0,"overallHitRate":null,"riskCheck":[],"safeCheck":[]},{"issue":"26077","date":"2026-05-21","difficulty":{"level":3,"levelLabel":"🟠 中等","totalScore":5.340695237741902},"realResults":[1,0,1,3,0,3,0,0,0,0,0,3,"*",3],"riskTotal":0,"riskHit":0,"riskHitRate":null,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":0,"overallHit":0,"overallHitRate":null,"riskCheck":[],"safeCheck":[]},{"issue":"26076","date":"2026-05-17","difficulty":{"level":3,"levelLabel":"🟠 中等","totalScore":5.327678979376154},"realResults":[0,3,3,1,0,1,3,0,3,0,1,0,3,3],"riskTotal":0,"riskHit":0,"riskHitRate":null,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":0,"overallHit":0,"overallHitRate":null,"riskCheck":[],"safeCheck":[]},{"issue":"26075","date":"2026-05-15","difficulty":{"level":3,"levelLabel":"🟠 中等","totalScore":5.243839004245783},"realResults":[3,0,3,0,3,3,1,1,3,0,0,0,3,3],"riskTotal":0,"riskHit":0,"riskHitRate":null,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":0,"overallHit":0,"overallHitRate":null,"riskCheck":[],"safeCheck":[]},{"issue":"26074","date":"2026-05-11","difficulty":{"level":3,"levelLabel":"🟠 中等","totalScore":5.194547162791237},"realResults":[1,1,1,0,3,0,0,3,1,0,0,0,1,3],"riskTotal":0,"riskHit":0,"riskHitRate":null,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":0,"overallHit":0,"overallHitRate":null,"riskCheck":[],"safeCheck":[]},{"issue":"26073","date":"2026-05-10","difficulty":{"level":2,"levelLabel":"🟡 中低","totalScore":4.435991627143772},"realResults":[0,1,3,3,3,3,3,0,0,0,0,3,0,1],"riskTotal":0,"riskHit":0,"riskHitRate":null,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":0,"overallHit":0,"overallHitRate":null,"riskCheck":[],"safeCheck":[]},{"issue":"26072","date":"2026-05-10","difficulty":{"level":2,"levelLabel":"🟡 中低","totalScore":4.49438600804751},"realResults":[3,1,3,3,0,3,3,0,3,1,1,1,3,"*"],"riskTotal":0,"riskHit":0,"riskHitRate":null,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":0,"overallHit":0,"overallHitRate":null,"riskCheck":[],"safeCheck":[]},{"issue":"26071","date":"2026-05-04","difficulty":{"level":2,"levelLabel":"🟡 中低","totalScore":2.7382157977287527},"realResults":[3,3,0,0,3,1,3,1,3,0,3,0,0,3],"riskTotal":0,"riskHit":0,"riskHitRate":null,"safeTotal":0,"safeHit":0,"safeHitRate":null,"overallTotal":0,"overallHit":0,"overallHitRate":null,"riskCheck":[],"safeCheck":[]}]}};
+}
+
+// ====== 工具函数 ======
+function fmtMoney(n) {
+  if (!n || n === 0) return '0';
+  if (n >= 100000000) return (n / 100000000).toFixed(2) + '亿';
+  if (n >= 10000) return (n / 10000).toFixed(0) + '万';
+  return n.toLocaleString();
+}
+
+function resultEmoji(r) {
+  if (r === 3 || r === '3') return '🏠';
+  if (r === 1 || r === '1') return '🤝';
+  if (r === 0 || r === '0') return '✈️';
+  return '❓';
+}
+
+function resultCSS(r) {
+  if (r === 3 || r === '3') return 'result-win';
+  if (r === 1 || r === '1') return 'result-draw';
+  if (r === 0 || r === '0') return 'result-lose';
+  return 'result-star';
+}
+
+function resultName(r) {
+  if (r === 3 || r === '3') return '主胜';
+  if (r === 1 || r === '1') return '平局';
+  if (r === 0 || r === '0') return '客胜';
+  if (r === '*') return '延期';
+  return String(r);
+}
+
+// ====== KPI 行 ======
+function renderKPI(data) {
+  const latest = data.latestDraw;
+  const diff = data.difficulty;
+  const summ = data.summary;
+  const sportCount = data.leagueSummary ? data.leagueSummary.length : 0;
+  const teamCount = data.teamSummary ? data.teamSummary.length : 0;
+
+  // 最新一期的 3/1/0 分布
+  let latestWin = 0, latestDraw = 0, latestLose = 0;
+  if (data.distributionTrend && data.distributionTrend.length > 0) {
+    const l = data.distributionTrend[0];
+    latestWin = l.win; latestDraw = l.draw; latestLose = l.lose;
+  }
+
+  let diffClass = 'diff-1';
+  if (diff.level >= 5) diffClass = 'diff-5';
+  else if (diff.level >= 4) diffClass = 'diff-4';
+  else if (diff.level >= 3) diffClass = 'diff-3';
+  else if (diff.level >= 2) diffClass = 'diff-2';
+
+  document.getElementById('kpiRow').innerHTML = `
+    <div class="card">
+      <h3>📅 最新开奖</h3>
+      <div class="stat-item">
+        <div class="stat-value navy" style="font-size:1.2em;">第 ${latest.code} 期</div>
+        <div class="stat-label">${latest.date}</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>🏟 14场赛果分布</h3>
+      <div style="display:flex; justify-content:center; gap:16px; padding:10px;">
+        <div class="stat-item"><div class="stat-value win">${latestWin}</div><div class="stat-label">🏠主胜</div></div>
+        <div class="stat-item"><div class="stat-value draw">${latestDraw}</div><div class="stat-label">🤝平局</div></div>
+        <div class="stat-item"><div class="stat-value lose">${latestLose}</div><div class="stat-label">✈️客胜</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>⚖ 难度评级</h3>
+      <div style="text-align:center; padding:10px;">
+        <span class="difficulty-badge ${diffClass}" style="font-size:1.4em;">${diff.levelLabel}</span>
+        <div class="stat-label" style="margin-top:4px;">综合评分 ${diff.totalScore.toFixed(1)}/10</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>📊 统计概览</h3>
+      <div class="stat-grid">
+        <div class="stat-item"><div class="stat-value gold">${data.dataRange.totalDraws}</div><div class="stat-label">数据总量(期)</div></div>
+        <div class="stat-item"><div class="stat-value navy">${sportCount}</div><div class="stat-label">联赛数</div></div>
+        <div class="stat-item"><div class="stat-value win">${summ.hotpotCount}</div><div class="stat-label">火锅奖</div></div>
+        <div class="stat-item"><div class="stat-value lose">${summ.coldCount}</div><div class="stat-label">冷门期</div></div>
+      </div>
+    </div>
+  `;
+}
+
+// ====== 最新赛果矩阵 ======
+function renderLatestResult(data) {
+  const latest = data.latestDraw;
+  const html = [];
+
+  // 标注期号
+  const issueTag = document.getElementById('latestIssueTag');
+  if (issueTag) {
+    issueTag.textContent = `（第 ${latest.code} 期 · ${latest.date || ''}）`;
+  }
+
+  // 14格赛果矩阵
+  html.push('<div class="result-grid" style="margin-bottom:10px;">');
+  if (latest.matches && latest.matches.length > 0) {
+    for (let i = 0; i < Math.min(latest.matches.length, 14); i++) {
+      const m = latest.matches[i];
+      const r = latest.results[i];
+      html.push(`<div class="result-cell ${resultCSS(r)}">${i+1}场<br>${resultEmoji(r)} ${resultName(r)}</div>`);
+    }
+  } else {
+    // 无matchList
+    for (let i = 0; i < Math.min(latest.results.length, 14); i++) {
+      const r = latest.results[i];
+      html.push(`<div class="result-cell ${resultCSS(r)}">${i+1}场<br>${resultEmoji(r)} ${resultName(r)}</div>`);
+    }
+  }
+  html.push('</div>');
+
+  // 比赛详情表
+  html.push('<table class="match-table"><thead><tr>');
+  html.push('<th>场次</th><th>联赛</th><th>主队</th><th></th><th>客队</th><th>赛果</th><th>比分</th>');
+  html.push('</tr></thead><tbody>');
+
+  if (latest.matches && latest.matches.length > 0) {
+    for (let i = 0; i < Math.min(latest.matches.length, 14); i++) {
+      const m = latest.matches[i];
+      const r = latest.results[i];
+      html.push(`<tr>
+        <td><b>${i+1}</b></td>
+        <td><span class="league-tag">${m.league}</span></td>
+        <td><b>${m.home}</b></td>
+        <td>vs</td>
+        <td><b>${m.away}</b></td>
+        <td class="${resultCSS(r)}"><b>${resultEmoji(r)} ${resultName(r)}</b></td>
+        <td>${m.score || '-'}</td>
+      </tr>`);
+    }
+  } else {
+    // 无matchList时只展示赛果
+    const r = latest.results;
+    html.push(`<tr><td colspan="7">赛果序列: ${r.map(r=>resultEmoji(r)+resultName(r)).join(' | ')}</td></tr>`);
+  }
+  html.push('</tbody></table>');
+
+  document.getElementById('latestResultMatrix').innerHTML = html.join('');
+}
+
+// ====== 难度评估图 ======
+function renderDifficultyChart(data) {
+  const diff = data.difficulty;
+  const ctx = document.getElementById('difficultyChart').getContext('2d');
+
+  // 标注评估对应的期号
+  const issueTag = document.getElementById('diffIssueTag');
+  if (issueTag) {
+    issueTag.textContent = data.latestDraw && data.latestDraw.code
+      ? `（第 ${data.latestDraw.code} 期 · ${data.latestDraw.date || ''}）`
+      : '';
+  }
+
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['平局因子(30%)', '奖金波动(25%)', '命中难度(25%)', '结果分散度(20%)'],
+      datasets: [{
+        data: [diff.drawScore, diff.cvScore, diff.hitScore, diff.entScore],
+        backgroundColor: ['#e65100', '#c62828', '#1a237e', '#ff9800'],
+        borderWidth: 2,
+        borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  document.getElementById('difficultyDetail').innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+      <div>📐 平局因子: <b>${diff.drawScore.toFixed(1)}</b>/10</div>
+      <div>💹 奖金波动: <b>${diff.cvScore.toFixed(1)}</b>/10</div>
+      <div>🎯 命中难度: <b>${diff.hitScore.toFixed(1)}</b>/10</div>
+      <div>🔀 分散度: <b>${diff.entScore.toFixed(1)}</b>/10</div>
+      <div style="grid-column:1/-1; margin-top:4px;">
+        📊 平均平局率: <b>${(diff.avgDrawRate*100).toFixed(1)}%</b> |
+        🔀 平均熵值: <b>${diff.avgEnt.toFixed(2)}</b>
+      </div>
+    </div>
+  `;
+}
+
+// ====== 胜平负分布趋势 ======
+function renderDistributionChart(data) {
+  const dist = data.distributionTrend;
+  if (!dist || dist.length === 0) return;
+
+  const labels = dist.map(d => d.code).reverse();
+  const winData = dist.map(d => d.win).reverse();
+  const drawData = dist.map(d => d.draw).reverse();
+  const loseData = dist.map(d => d.lose).reverse();
+
+  const ctx = document.getElementById('distributionChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: '🏠主胜(3)', data: winData, backgroundColor: '#2e7d32', stack: 'stack0' },
+        { label: '🤝平局(1)', data: drawData, backgroundColor: '#e65100', stack: 'stack0' },
+        { label: '✈️客胜(0)', data: loseData, backgroundColor: '#c62828', stack: 'stack0' }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { stacked: true, ticks: { font: { size: 9 } } },
+        y: { stacked: true, max: 14, ticks: { stepSize: 2 } }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+// ====== 位置热度表 ======
+function renderPositionHeat(data) {
+  const heat = data.positionHeat;
+  if (!heat || heat.length === 0) return;
+
+  let html = '<table><thead><tr>';
+  html += '<th>位置</th><th>主胜(3)</th><th>平局(1)</th><th>客胜(0)</th><th>最热</th><th>熵值</th><th>风险</th><th>最新对阵</th>';
+  html += '</tr></thead><tbody>';
+
+  for (const h of heat) {
+    const winPct = (h.winPct || 0).toFixed(0) + '%';
+    const drawPct = (h.drawPct || 0).toFixed(0) + '%';
+    const losePct = (h.losePct || 0).toFixed(0) + '%';
+    const maxLabel = { win: '主胜', draw: '平局', lose: '客胜' }[h.maxKey] || '';
+    let riskHtml = '';
+    if (h.risk === 'high') riskHtml = '<span class="risk-high">🔴高</span>';
+    else if (h.risk === 'medium_draw') riskHtml = '<span class="risk-draw">⚠平局陷阱</span>';
+    else if (h.risk === 'medium') riskHtml = '<span class="risk-medium">🟡中</span>';
+    else riskHtml = '<span class="risk-low">🟢低</span>';
+
+    const matchInfo = h.latestMatch ? `${h.latestMatch.home}vs${h.latestMatch.away}` : '-';
+    const entClass = h.ent > 0.8 ? 'risk-high' : h.ent > 0.5 ? 'risk-medium' : 'risk-low';
+
+    html += `<tr>
+      <td><b>第${h.position}场</b></td>
+      <td style="color:#2e7d32;font-weight:bold;">${winPct}</td>
+      <td style="color:#e65100;font-weight:bold;">${drawPct}</td>
+      <td style="color:#c62828;font-weight:bold;">${losePct}</td>
+      <td>${maxLabel}</td>
+      <td><span class="${entClass}">${(h.ent||0).toFixed(2)}</span></td>
+      <td>${riskHtml}</td>
+      <td style="font-size:0.85em;">${matchInfo}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+
+  document.getElementById('positionHeatTable').innerHTML = html;
+}
+
+// ====== 奖金走势图 ======
+function renderPrizeChart(data) {
+  const trend = data.prizeTrend;
+  if (!trend || trend.length === 0) return;
+
+  const labels = trend.map(t => t.code).reverse();
+  const amounts = trend.map(t => t.prize1Amount).reverse();
+
+  const ctx = document.getElementById('prizeChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: '一等奖单注奖金(元)',
+        data: amounts,
+        backgroundColor: amounts.map(a => {
+          if (a <= 100000) return '#4caf50';
+          if (a <= 500000) return '#ff9800';
+          return '#f44336';
+        }),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { ticks: { callback: v => fmtMoney(v) } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => fmtMoney(ctx.raw) } }
+      }
+    }
+  });
+
+  // 类型分布饼图
+  const hotpotCnt = trend.filter(t => t.type === '🍲火锅奖').length;
+  const coldCnt = trend.filter(t => t.type === '🧊冷门期').length;
+  const zeroCnt = trend.filter(t => t.type === '🥶无人中').length;
+  const normalCnt = trend.filter(t => t.type === '●正常').length;
+
+  const pieCtx = document.getElementById('prizeTypeChart').getContext('2d');
+  new Chart(pieCtx, {
+    type: 'pie',
+    data: {
+      labels: ['🍲火锅奖', '🧊冷门期', '🥶无人中', '●正常'],
+      datasets: [{
+        data: [hotpotCnt, coldCnt, zeroCnt, normalCnt],
+        backgroundColor: ['#ff9800', '#2196f3', '#f44336', '#4caf50']
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }
+    }
+  });
+
+  document.getElementById('prizeTypeSummary').innerHTML = `
+    🍲火锅奖: <b>${hotpotCnt}</b> 期 |
+    🧊冷门期: <b>${coldCnt}</b> 期 |
+    🥶无人中: <b>${zeroCnt}</b> 期
+  `;
+}
+
+// ====== 奖金详情表 ======
+function renderPrizeDetailTable(data) {
+  const trend = data.prizeTrend;
+  if (!trend || trend.length === 0) return;
+
+  let html = '<table><thead><tr>';
+  html += '<th>期号</th><th>日期</th><th>销售额</th><th>一等奖注数</th><th>一等奖金额</th><th>二等奖注数</th><th>二等奖金额</th><th>类型</th>';
+  html += '</tr></thead><tbody>';
+
+  for (const t of trend) {
+    let typeTag = '';
+    if (t.type === '🍲火锅奖') typeTag = '<span class="tag tag-hotpot">🍲火锅</span>';
+    else if (t.type === '🧊冷门期') typeTag = '<span class="tag tag-cold">🧊冷门</span>';
+    else if (t.type === '🥶无人中') typeTag = '<span class="tag tag-zero">🥶无人中</span>';
+    else typeTag = '<span class="tag tag-normal">●正常</span>';
+
+    html += `<tr>
+      <td><b>${t.code}</b></td>
+      <td>${t.date}</td>
+      <td>${fmtMoney(t.totalSale)}</td>
+      <td>${t.prize1Count}</td>
+      <td>${fmtMoney(t.prize1Amount)}</td>
+      <td>${t.prize2Count}</td>
+      <td>${fmtMoney(t.prize2Amount)}</td>
+      <td>${typeTag}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+
+  document.getElementById('prizeDetailTable').innerHTML = html;
+}
+
+// ====== 往期评估记录 ======
+function renderHistoryEvaluations(data) {
+  const history = data.historyEvaluations;
+  const container = document.getElementById('historyEvaluationDetail');
+  const selector = document.getElementById('historySelector');
+  if (!container || !selector) return;
+  if (!history || history.length === 0) {
+    selector.innerHTML = '';
+    container.innerHTML = '<p>暂无往期评估记录</p>';
+    return;
+  }
+
+  // 期号选择器
+  let selectorHtml = '';
+  history.forEach((h, idx) => {
+    selectorHtml += `<button class="period-btn ${idx===0?'active':''}" onclick="showHistoryEval(${idx})">第${h.issue}期</button>`;
+  });
+  selector.innerHTML = selectorHtml;
+
+  // 存储数据
+  window._historyEvaluations = history;
+
+  // 默认展示最新一期
+  showHistoryEvalContent(history[0]);
+}
+
+function showHistoryEval(idx) {
+  document.querySelectorAll('#historySelector .period-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === idx);
+  });
+  showHistoryEvalContent(window._historyEvaluations[idx]);
+}
+
+function diffBadgeClass(level) {
+  if (level >= 5) return 'diff-5';
+  if (level >= 4) return 'diff-4';
+  if (level >= 3) return 'diff-3';
+  if (level >= 2) return 'diff-2';
+  return 'diff-1';
+}
+
+function showHistoryEvalContent(h) {
+  if (!h) return;
+  const container = document.getElementById('historyEvaluationDetail');
+  const d = h.difficulty;
+
+  let html = `<div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:12px;">`;
+  html += `<div><span style="color:#888;font-size:0.85em;">期号</span><br><b style="font-size:1.1em;">第 ${h.issue} 期</b></div>`;
+  html += `<div><span style="color:#888;font-size:0.85em;">日期</span><br><b>${h.date || '-'}</b></div>`;
+  html += `<div><span style="color:#888;font-size:0.85em;">难度评级</span><br><span class="difficulty-badge ${diffBadgeClass(d.level)}">${d.levelLabel}</span></div>`;
+  html += `<div><span style="color:#888;font-size:0.85em;">综合评分</span><br><b>${d.totalScore.toFixed(1)}/10</b></div>`;
+  if (h.prizeCV != null) html += `<div><span style="color:#888;font-size:0.85em;">奖金CV</span><br><b>${h.prizeCV.toFixed(2)}</b></div>`;
+  html += `<div><span style="color:#888;font-size:0.85em;">平均平局率</span><br><b>${(d.avgDrawRate*100).toFixed(1)}%</b></div>`;
+  html += `</div>`;
+
+  // 近期奖金类型
+  if (h.recent5Types && h.recent5Types.length > 0) {
+    html += `<div style="margin-bottom:12px;font-size:0.85em;color:#666;">🏷 近5期奖金类型：${h.recent5Types.join(' · ')}</div>`;
+  }
+
+  // 风险场次
+  html += `<div style="margin-bottom:12px;"><b>⚠️ 风险场次（${h.riskyPositions ? h.riskyPositions.length : 0}）：</b>`;
+  if (h.riskyPositions && h.riskyPositions.length > 0) {
+    html += `<table class="match-table" style="margin-top:6px;"><thead><tr><th>场次</th><th>风险</th><th>对阵</th></tr></thead><tbody>`;
+    for (const r of h.riskyPositions) {
+      const matchInfo = r.match ? `${r.match.league}·${r.match.home} vs ${r.match.away}` : '-';
+      html += `<tr><td><b>第${r.position}场</b></td><td>${r.riskLabel || r.risk}</td><td style="font-size:0.85em;">${matchInfo}</td></tr>`;
+    }
+    html += `</tbody></table>`;
+  } else {
+    html += ` 无</div>`;
+  }
+
+  // 安全场次
+  html += `<div style="margin-bottom:4px;"><b>🟢 安全场次（${h.safePositions ? h.safePositions.length : 0}）：</b>`;
+  if (h.safePositions && h.safePositions.length > 0) {
+    const items = h.safePositions.map(s => {
+      const maxLabel = { win: '主胜', draw: '平局', lose: '客胜' }[s.maxKey] || '';
+      const matchInfo = s.match ? `${s.match.home}vs${s.match.away}` : '';
+      return `第${s.position}场(${maxLabel}×${s.maxVal} ${matchInfo})`;
+    }).join('、');
+    html += ` <span style="font-size:0.85em;">${items}</span>`;
+  } else {
+    html += ` 无</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+// ====== 回溯分析渲染 ======
+function renderBackfillAnalysis(data) {
+  const ba = data.backfillAnalysis;
+  if (!ba) {
+    document.getElementById('backfillKpiRow').innerHTML = '';
+    document.getElementById('backfillDifficultyChart').parentElement.innerHTML = '<p style="text-align:center;color:#999;">暂无回溯分析数据</p>';
+    document.getElementById('backfillRiskPos').innerHTML = '';
+    document.getElementById('backfillLeagueRisk').innerHTML = '';
+    document.getElementById('backfillCorrelation').innerHTML = '';
+    return;
+  }
+
+  // ---- KPI 行 ----
+  const lc = ba.levelCount || {};
+  document.getElementById('backfillKpiRow').innerHTML = `
+    <div class="card">
+      <h3>📊 回溯期数</h3>
+      <div class="stat-item"><div class="stat-value navy">${ba.totalEvaluations}</div><div class="stat-label">评估期数</div></div>
+    </div>
+    <div class="card">
+      <h3>📈 平均难度</h3>
+      <div class="stat-item"><div class="stat-value gold">${ba.avgTotalScore.toFixed(2)}</div><div class="stat-label">综合评分 /10</div></div>
+    </div>
+    <div class="card">
+      <h3>🔴 高难占比</h3>
+      <div class="stat-item"><div class="stat-value lose">${((lc['🔴 中高']||0) + (lc['💀 高难']||0))}</div><div class="stat-label">中高/高难期数</div></div>
+    </div>
+    <div class="card">
+      <h3>🟢 低难占比</h3>
+      <div class="stat-item"><div class="stat-value win">${((lc['🟢 低']||0) + (lc['🟡 中低']||0))}</div><div class="stat-label">低/中低期数</div></div>
+    </div>
+  `;
+
+  // ---- 难度走势折线图 ----
+  const trend = ba.difficultyTrend || [];
+  if (trend.length > 0) {
+    const ctx = document.getElementById('backfillDifficultyChart').getContext('2d');
+    const labels = trend.map(t => t.issue).reverse();
+    const scores = trend.map(t => t.totalScore).reverse();
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: '综合难度评分',
+          data: scores,
+          borderColor: '#c62828',
+          backgroundColor: 'rgba(198,40,40,0.1)',
+          fill: true,
+          tension: 0.2,
+          pointRadius: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { min: 0, max: 10, ticks: { stepSize: 2 } },
+          x: { ticks: { font: { size: 8 }, maxTicksLimit: 15 } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  // ---- 风险位置热度表 ----
+  const riskRank = ba.riskPosRanking || [];
+  if (riskRank.length > 0) {
+    let html = '<table><thead><tr><th>位置</th><th>风险次数</th><th>占期数比</th><th>热度条</th></tr></thead><tbody>';
+    const maxCnt = riskRank[0].count || 1;
+    for (const r of riskRank) {
+      const pct = r.rate;
+      const barW = Math.round((r.count / maxCnt) * 100);
+      const barColor = pct >= 50 ? '#ef5350' : pct >= 30 ? '#ff9800' : '#90caf9';
+      html += `<tr>
+        <td><b>第${r.position}场</b></td>
+        <td style="color:#c62828;font-weight:bold;">${r.count}</td>
+        <td>${pct.toFixed(0)}%</td>
+        <td style="text-align:left;width:40%;"><div style="background:${barColor};height:14px;border-radius:7px;width:${barW}%;"></div></td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    document.getElementById('backfillRiskPos').innerHTML = html;
+  }
+
+  // ---- 联赛风险榜 ----
+  const leagueRisk = ba.leagueRiskRanking || [];
+  if (leagueRisk.length > 0) {
+    let html = '<table><thead><tr><th>联赛</th><th>风险场次次数</th></tr></thead><tbody>';
+    const maxLg = leagueRisk[0].count || 1;
+    for (const l of leagueRisk) {
+      const barW = Math.round((l.count / maxLg) * 100);
+      html += `<tr>
+        <td><b>${l.league}</b></td>
+        <td style="text-align:left;">${l.count} <span style="display:inline-block;background:#c62828;height:12px;border-radius:6px;width:${barW}px;vertical-align:middle;"></span></td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    document.getElementById('backfillLeagueRisk').innerHTML = html;
+  }
+
+  // ---- 关键相关性 ----
+  const corrCv = ba.corrScoreCV, corrDraw = ba.corrScoreDraw;
+  function corrLabel(v) {
+    if (v == null) return 'N/A';
+    const a = Math.abs(v);
+    const strength = a >= 0.8 ? '强' : a >= 0.5 ? '中等' : '弱';
+    const dir = v >= 0 ? '正相关' : '负相关';
+    return `${v.toFixed(3)}（${strength}${dir}）`;
+  }
+  document.getElementById('backfillCorrelation').innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div style="background:#fafafa;border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:0.8em;color:#888;">难度 ↔ 奖金CV</div>
+        <div style="font-size:1.4em;font-weight:bold;color:#c62828;">${corrLabel(corrCv)}</div>
+      </div>
+      <div style="background:#fafafa;border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:0.8em;color:#888;">难度 ↔ 平局率</div>
+        <div style="font-size:1.4em;font-weight:bold;color:#e65100;">${corrLabel(corrDraw)}</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:0.85em;color:#666;">
+      💡 相关系数越接近 ±1 表示关联越强。平局率与奖金波动是难度评分的两大驱动因子。
+    </div>
+  `;
+}
+
+// ====== 未来期次提前评估 ======
+function renderForecast(data) {
+  const forecasts = data.forecastList || data.forecast || [];
+  const selector = document.getElementById('forecastSelector');
+  const container = document.getElementById('forecastDetail');
+  if (!selector || !container) return;
+
+  const list = Array.isArray(forecasts) ? forecasts : (forecasts.periods || []);
+  if (list.length === 0) {
+    selector.innerHTML = '';
+    container.innerHTML = '<p style="color:#999;">暂无未来期次预测（开奖后自动转入比对）</p>';
+    return;
+  }
+
+  // 期号切换器
+  let selHtml = '';
+  list.forEach((f, i) => {
+    selHtml += `<button class="period-btn ${i===0?'active':''}" onclick="showForecast(${i})">第${f.issue}期</button>`;
+  });
+  selector.innerHTML = selHtml;
+  window._forecasts = list;
+  showForecastContent(list[0]);
+}
+
+function showForecast(idx) {
+  document.querySelectorAll('#forecastSelector .period-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+  showForecastContent(window._forecasts[idx]);
+}
+
+function showForecastContent(f) {
+  if (!f) return;
+  const container = document.getElementById('forecastDetail');
+  const dist = f.distribution || { win: 0, draw: 0, lose: 0 };
+
+  let html = `<div style="margin-bottom:10px;font-size:0.9em;">`;
+  html += `<b>第 ${f.issue} 期</b> | 停售: ${f.saleEndTime || '-'} | `;
+  html += `预测分布: <span style="color:#2e7d32;">主胜${dist.win}</span> / <span style="color:#e65100;">平局${dist.draw}</span> / <span style="color:#c62828;">客胜${dist.lose}</span>`;
+  html += `</div>`;
+
+  html += '<table class="match-table"><thead><tr>';
+  html += '<th>场次</th><th>联赛</th><th>主队</th><th>VS</th><th>客队</th><th>预测</th><th>信心</th><th>胜/平/负概率</th><th>历史位置风险</th>';
+  html += '</tr></thead><tbody>';
+
+  for (const m of f.matches || []) {
+    const predColor = m.pred === 3 ? '#2e7d32' : m.pred === 1 ? '#e65100' : '#c62828';
+    const riskTag = m.histRisk && m.histRisk !== '🟢低' ? `<span style="color:#c62828;font-size:0.8em;">${m.histRisk}</span>` : '<span style="color:#999;font-size:0.8em;">-</span>';
+    const isRisk = (f.riskMatches || []).some(r => r.position === m.position);
+    html += `<tr${isRisk ? ' style="background:#fff5f5;"' : ''}>
+      <td><b>${m.position}</b>${isRisk?' ⚠':''}</td>
+      <td><span class="league-tag">${m.league}</span></td>
+      <td><b>${m.home}</b></td>
+      <td>vs</td>
+      <td><b>${m.away}</b></td>
+      <td style="color:${predColor};font-weight:bold;">${m.predLabel}</td>
+      <td>${m.confidence != null ? m.confidence + '%' : '-'}</td>
+      <td style="font-size:0.8em;">${m.homeProb}%/ ${m.drawProb}%/ ${m.awayProb}%</td>
+      <td>${riskTag}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  html += `<div style="margin-top:8px;font-size:0.8em;color:#999;">⚠ 红色底为风险场次（信心低或历史位置易爆冷）。预测基于欧赔隐含概率，仅供统计参考，不构成投注建议。</div>`;
+  container.innerHTML = html;
+}
+
+// ====== 评估 vs 真实赛果比对 ======
+function renderComparison(data) {
+  const comp = data.comparison;
+  const summaryEl = document.getElementById('comparisonSummary');
+  const selectorEl = document.getElementById('comparisonSelector');
+  const tableEl = document.getElementById('comparisonTable');
+  if (!summaryEl || !tableEl) return;
+
+  if (!comp || !comp.summary || !comp.periods || comp.periods.length === 0) {
+    summaryEl.innerHTML = '';
+    if (selectorEl) selectorEl.innerHTML = '';
+    tableEl.innerHTML = '<p style="color:#999;">暂无比对数据（需期次开奖后回填赛果）</p>';
+    return;
+  }
+
+  const s = comp.summary;
+  summaryEl.innerHTML = `
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:12px;">
+      <div style="background:#fafafa;border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:0.8em;color:#888;">已比对期数</div>
+        <div style="font-size:1.6em;font-weight:bold;color:#1a237e;">${s.totalPeriods}</div>
+      </div>
+      <div style="background:#fafafa;border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:0.8em;color:#888;">风险场次爆冷命中</div>
+        <div style="font-size:1.6em;font-weight:bold;color:#c62828;">${s.riskHitRate != null ? s.riskHitRate + '%' : '-'}</div>
+        <div style="font-size:0.75em;color:#888;">${s.riskHit}/${s.riskTotal} 场</div>
+      </div>
+      <div style="background:#fafafa;border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:0.8em;color:#888;">安全场次稳定命中</div>
+        <div style="font-size:1.6em;font-weight:bold;color:#2e7d32;">${s.safeHitRate != null ? s.safeHitRate + '%' : '-'}</div>
+        <div style="font-size:0.75em;color:#888;">${s.safeHit}/${s.safeTotal} 场</div>
+      </div>
+      <div style="background:#fafafa;border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:0.8em;color:#888;">整体命中率</div>
+        <div style="font-size:1.6em;font-weight:bold;color:#e65100;">${s.overallHitRate != null ? s.overallHitRate + '%' : '-'}</div>
+        <div style="font-size:0.75em;color:#888;">${s.overallHit}/${s.overallTotal} 场</div>
+      </div>
+    </div>
+  `;
+
+  // 存储数据
+  window._comparisonPeriods = comp.periods;
+
+  // 期号切换器
+  if (selectorEl) {
+    let selHtml = '<span style="font-size:0.85em;color:#888;margin-right:4px;">选择期号查看逐场对比：</span>';
+    comp.periods.forEach((c, idx) => {
+      selHtml += `<button class="period-btn ${idx===0?'active':''}" onclick="showComparison(${idx})">第${c.issue}期</button>`;
+    });
+    selectorEl.innerHTML = selHtml;
+  }
+
+  // 默认展示最近一期逐场对比
+  showComparisonContent(comp.periods[0]);
+}
+
+function showComparison(idx) {
+  const periods = window._comparisonPeriods;
+  if (!periods || !periods[idx]) return;
+  document.querySelectorAll('#comparisonSelector .period-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+  showComparisonContent(periods[idx]);
+}
+
+function showComparisonContent(c) {
+  const tableEl = document.getElementById('comparisonTable');
+  if (!tableEl || !c) return;
+
+  const diffStr = c.difficulty ? `${c.difficulty.levelLabel} (${c.difficulty.totalScore.toFixed(1)}/10)` : '-';
+
+  let html = '';
+
+  // 该期概览条
+  html += `<div style="display:flex; flex-wrap:wrap; gap:16px; margin-bottom:12px; padding:10px; background:#fafafa; border-radius:8px; font-size:0.85em;">`;
+  html += `<div><span style="color:#888;">期号</span><br><b>第 ${c.issue} 期</b></div>`;
+  html += `<div><span style="color:#888;">日期</span><br><b>${c.date || '-'}</b></div>`;
+  html += `<div><span style="color:#888;">难度评级</span><br><b>${diffStr}</b></div>`;
+  html += `<div><span style="color:#888;">风险命中</span><br><b style="color:#c62828;">${c.riskHitRate != null ? c.riskHitRate + '%' : '-'}</b> (${c.riskHit}/${c.riskTotal})</div>`;
+  html += `<div><span style="color:#888;">安全命中</span><br><b style="color:#2e7d32;">${c.safeHitRate != null ? c.safeHitRate + '%' : '-'}</b> (${c.safeHit}/${c.safeTotal})</div>`;
+  html += `<div><span style="color:#888;">整体命中</span><br><b style="color:#e65100;">${c.overallHitRate != null ? c.overallHitRate + '%' : '-'}</b> (${c.overallHit}/${c.overallTotal})</div>`;
+  html += `</div>`;
+
+  // 真实赛果序列
+  if (c.realResults && c.realResults.length > 0) {
+    html += `<div style="margin-bottom:12px;font-size:0.8em;color:#666;">真实赛果序列：${c.realResults.map(r => resultEmoji(r) + resultName(r)).join(' · ')}</div>`;
+  }
+
+  // 风险场次逐场对比
+  html += `<div style="margin-bottom:14px;"><b style="color:#c62828;">🔴 风险场次逐场对比（${c.riskHit}/${c.riskTotal} 命中爆冷）</b>`;
+  if (c.riskCheck && c.riskCheck.length > 0) {
+    html += `<table class="match-table" style="margin-top:6px;"><thead><tr><th>场次</th><th>对阵</th><th>历史最热</th><th>真实赛果</th><th>判定</th></tr></thead><tbody>`;
+    for (const rc of c.riskCheck) {
+      const match = rc.match ? `<span class="league-tag">${rc.match.league}</span> ${rc.match.home} vs ${rc.match.away}${rc.match.score ? ' (' + rc.match.score + ')' : ''}` : '-';
+      html += `<tr>
+        <td><b>第${rc.position}场</b></td>
+        <td style="text-align:left;font-size:0.85em;">${match}</td>
+        <td>${keyName(rc.maxKey)}</td>
+        <td><b class="${resultCSS(rc.realResult)}">${resultEmoji(rc.realResult)} ${keyName(rc.realKey)}</b></td>
+        <td>${rc.hit ? '<span style="color:#c62828;font-weight:bold;">✅ 命中爆冷</span>' : '<span style="color:#999;">❌ 未爆冷</span>'}</td>
+      </tr>`;
+    }
+    html += `</tbody></table>`;
+  } else {
+    html += ` <span style="color:#999;font-size:0.85em;">无</span>`;
+  }
+  html += `</div>`;
+
+  // 安全场次逐场对比
+  html += `<div><b style="color:#2e7d32;">🟢 安全场次逐场对比（${c.safeHit}/${c.safeTotal} 命中稳定）</b>`;
+  if (c.safeCheck && c.safeCheck.length > 0) {
+    html += `<table class="match-table" style="margin-top:6px;"><thead><tr><th>场次</th><th>对阵</th><th>历史最热</th><th>真实赛果</th><th>判定</th></tr></thead><tbody>`;
+    for (const sc of c.safeCheck) {
+      const match = sc.match ? `<span class="league-tag">${sc.match.league}</span> ${sc.match.home} vs ${sc.match.away}${sc.match.score ? ' (' + sc.match.score + ')' : ''}` : '-';
+      html += `<tr>
+        <td><b>第${sc.position}场</b></td>
+        <td style="text-align:left;font-size:0.85em;">${match}</td>
+        <td>${keyName(sc.maxKey)}</td>
+        <td><b class="${resultCSS(sc.realResult)}">${resultEmoji(sc.realResult)} ${keyName(sc.realKey)}</b></td>
+        <td>${sc.hit ? '<span style="color:#2e7d32;font-weight:bold;">✅ 命中稳定</span>' : '<span style="color:#e65100;font-weight:bold;">❌ 意外爆冷</span>'}</td>
+      </tr>`;
+    }
+    html += `</tbody></table>`;
+  } else {
+    html += ` <span style="color:#999;font-size:0.85em;">无</span>`;
+  }
+  html += `</div>`;
+
+  tableEl.innerHTML = html;
+}
+
+function keyName(k) {
+  return { win: '主胜', draw: '平局', lose: '客胜', star: '延期' }[k] || k;
+}
+
+// ====== 每期比赛详情表 ======
+function renderPeriodMatches(data) {
+  const matches = data.recentMatches;
+  if (!matches) return;
+
+  const periods = Object.keys(matches).sort((a, b) => b.localeCompare(a));
+
+  // 期号选择器
+  let selectorHtml = '';
+  periods.forEach((code, idx) => {
+    selectorHtml += `<button class="period-btn ${idx===0?'active':''}" onclick="showPeriodMatch('${code}')">${code}</button>`;
+  });
+  document.getElementById('periodSelector').innerHTML = selectorHtml;
+
+  // 默认展示最新一期
+  if (periods.length > 0) {
+    showPeriodMatchContent(periods[0], matches[periods[0]]);
+  }
+
+  // 存储数据以便切换
+  window._periodMatches = matches;
+  window._periods = periods;
+}
+
+function showPeriodMatch(code) {
+  // 更新按钮状态
+  document.querySelectorAll('.period-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent === code);
+  });
+  showPeriodMatchContent(code, window._periodMatches[code]);
+}
+
+function showPeriodMatchContent(code, detail) {
+  if (!detail) return;
+
+  let html = `<div style="margin-bottom:8px;font-weight:bold;color:#1a237e;">📅 ${detail.date || code} | 💰 销售额: ${fmtMoney(detail.totalSale || 0)} | 🏆 一等奖: ${detail.prize1Count}注/${fmtMoney(detail.prize1Amount)}元</div>`;
+  html += '<table class="match-table"><thead><tr>';
+  html += '<th>场次</th><th>联赛</th><th>主队</th><th></th><th>客队</th><th>赛果</th><th>比分</th>';
+  html += '</tr></thead><tbody>';
+
+  if (detail.matches && detail.matches.length > 0) {
+    for (const m of detail.matches) {
+      const r = m.result;
+      html += `<tr>
+        <td><b>${m.matchNum}</b></td>
+        <td><span class="league-tag">${m.league}</span></td>
+        <td><b>${m.home}</b></td>
+        <td>vs</td>
+        <td><b>${m.away}</b></td>
+        <td class="${resultCSS(r)}"><b>${resultEmoji(r)} ${m.resultLabel || resultName(r)}</b></td>
+        <td>${m.score || '-'}</td>
+      </tr>`;
+    }
+  }
+  html += '</tbody></table>';
+
+  document.getElementById('periodMatchDetail').innerHTML = html;
+}
+
+// ====== 联赛统计表 ======
+function renderLeagueTable(data) {
+  const leagues = data.leagueSummary;
+  if (!leagues || leagues.length === 0) {
+    document.getElementById('leagueTable').innerHTML = '<p>暂无联赛统计数据</p>';
+    return;
+  }
+
+  let html = '<table><thead><tr>';
+  html += '<th>联赛</th><th>出赛场次</th><th>主胜</th><th>平局</th><th>客胜</th><th>主胜率</th><th>胜平负比例</th>';
+  html += '</tr></thead><tbody>';
+
+  for (const l of leagues) {
+    const total = l.homeWins + l.draws + l.awayWins;
+    const wPct = total > 0 ? (l.homeWins / total * 100) : 0;
+    const dPct = total > 0 ? (l.draws / total * 100) : 0;
+    const aPct = total > 0 ? (l.awayWins / total * 100) : 0;
+
+    html += `<tr>
+      <td><b>${l.name}</b></td>
+      <td>${l.appearances}</td>
+      <td style="color:#2e7d32;font-weight:bold;">${l.homeWins}</td>
+      <td style="color:#e65100;font-weight:bold;">${l.draws}</td>
+      <td style="color:#c62828;font-weight:bold;">${l.awayWins}</td>
+      <td>${l.homeWinRate.toFixed(1)}%</td>
+      <td>
+        <div class="win-bar-container" style="justify-content:center;">
+          <div class="win-bar win-bar-home" style="width:${wPct}px;"></div>
+          <div class="win-bar win-bar-draw" style="width:${dPct}px;"></div>
+          <div class="win-bar win-bar-away" style="width:${aPct}px;"></div>
+        </div>
+      </td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+
+  document.getElementById('leagueTable').innerHTML = html;
+}
+
+// ====== 球队统计表 ======
+function renderTeamTable(data) {
+  const teams = data.teamSummary;
+  if (!teams || teams.length === 0) {
+    document.getElementById('teamTable').innerHTML = '<p>暂无球队统计数据</p>';
+    return;
+  }
+
+  let html = '<table><thead><tr>';
+  html += '<th>#</th><th>球队</th><th>出场</th><th>胜</th><th>平</th><th>负</th><th>胜率</th><th>主/客</th><th>主要联赛</th>';
+  html += '</tr></thead><tbody>';
+
+  teams.forEach((t, idx) => {
+    const topLeagues = t.leagues ? t.leagues.slice(0, 3).map(l => `${l[0]}(${l[1].appearances})`).join(', ') : '-';
+
+    html += `<tr>
+      <td>${idx+1}</td>
+      <td><b>${t.name}</b></td>
+      <td>${t.totalMatches}</td>
+      <td style="color:#2e7d32;font-weight:bold;">${t.wins}</td>
+      <td style="color:#e65100;font-weight:bold;">${t.draws}</td>
+      <td style="color:#c62828;font-weight:bold;">${t.losses}</td>
+      <td><b>${t.winRate.toFixed(1)}%</b></td>
+      <td>${t.asHome}主/${t.asAway}客</td>
+      <td style="font-size:0.8em;">${topLeagues}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+
+  document.getElementById('teamTable').innerHTML = html;
+}
+
+// ====== Tab 切换 ======
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+  if (tab === 'league') {
+    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    document.getElementById('tabLeague').classList.add('active');
+  } else {
+    document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    document.getElementById('tabTeam').classList.add('active');
+  }
+}
+
+// ====== 主渲染 ======
+async function main() {
+  const data = await loadData();
+  if (!data) return;
+
+  document.getElementById('pageMeta').textContent =
+    `数据范围: 第 ${data.dataRange.earliestIssue} 期 ~ 第 ${data.dataRange.latestIssue} 期 (共 ${data.dataRange.totalDraws} 期)`;
+  document.getElementById('updateTime').textContent = `更新: ${new Date(data.generatedAt).toLocaleString('zh-CN')}`;
+  document.getElementById('genTime').textContent = data.generatedAt;
+
+  renderKPI(data);
+  renderLatestResult(data);
+  renderDifficultyChart(data);
+  renderDistributionChart(data);
+  renderPositionHeat(data);
+  renderPrizeChart(data);
+  renderPrizeDetailTable(data);
+  renderHistoryEvaluations(data);
+  renderForecast(data);
+  renderComparison(data);
+  renderBackfillAnalysis(data);
+  renderPeriodMatches(data);
+  renderLeagueTable(data);
+  renderTeamTable(data);
+}
+
+main();
+</script>
+</body>
+</html>
