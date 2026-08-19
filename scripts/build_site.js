@@ -39,8 +39,8 @@ const SITES = [
     key: 'dlt',
     title: '🎯 超级大乐透 分区冷热分析仪表盘',
     desc: '大乐透近20期冷热号、三区分布、连号率、选号推荐',
-    template: path.join(ROOT, 'ssq-auto', 'dashboard', 'dlt_index.html'),
-    dataFile: path.join(ROOT, 'ssq-auto', 'data', 'dashboard_dlt_data.json'),
+    template: path.join(ROOT, 'dlt-auto', 'dashboard', 'index.html'),
+    dataFile: path.join(ROOT, 'dlt-auto', 'data', 'dashboard_data.json'),
     output: path.join(DOCS_DIR, 'dlt.html'),
     accent: '#E65100'
   },
