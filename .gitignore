@@ -4,12 +4,14 @@ node_modules/
 # 数据源（大文件/临时文件，不推送到站点）
 ssq-auto/data/
 sfc-auto/data/
+dlt-auto/data/
 ssq-auto/dashboard/
 sfc-auto/dashboard/
 
 # 本地配置与凭据
 *.local.json
 scheduled_tasks.json
+dlt-auto/config.json
 
 # 临时文件
 *.tmp
