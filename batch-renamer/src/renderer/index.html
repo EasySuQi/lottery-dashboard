@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>批量重命名工具</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ========== 顶部工具栏 ========== -->
+  <header class="toolbar">
+    <h1 class="title">📝 批量重命名工具</h1>
+    <div class="toolbar-actions">
+      <button id="btnSelectFolder" class="btn btn-primary">📂 选择文件夹</button>
+      <button id="btnUndo" class="btn btn-warning" disabled>↩ 撤销上次操作</button>
+    </div>
+  </header>
+
+  <!-- ========== 当前文件夹信息 ========== -->
+  <div id="folderInfo" class="folder-info hidden">
+    <span class="folder-icon">📁</span>
+    <span id="folderPath" class="folder-path"></span>
+    <span id="fileCount" class="file-count"></span>
+  </div>
+
+  <!-- ========== 规则编辑区 ========== -->
+  <section id="rulesPanel" class="rules-panel hidden">
+    <h2 class="section-title">⚙️ 重命名规则</h2>
+
+    <div class="rules-grid">
+      <!-- 行1：添加/删除前缀 -->
+      <div class="rule-item">
+        <label class="rule-label">添加前缀</label>
+        <div class="rule-row">
+          <input type="text" id="addPrefix" class="rule-input" placeholder="例如：IMG_" disabled>
+          <button id="btnApplyPrefix" class="btn btn-sm btn-outline" disabled>应用</button>
+        </div>
+      </div>
+      <div class="rule-item">
+        <label class="rule-label">删除前缀</label>
+        <div class="rule-row">
+          <input type="text" id="delPrefix" class="rule-input" placeholder="输入要删除的前缀" disabled>
+          <button id="btnRemovePrefix" class="btn btn-sm btn-outline" disabled>应用</button>
+        </div>
+      </div>
+
+      <!-- 行2：添加/删除后缀 -->
+      <div class="rule-item">
+        <label class="rule-label">添加后缀</label>
+        <div class="rule-row">
+          <input type="text" id="addSuffix" class="rule-input" placeholder="例如：_final" disabled>
+          <button id="btnApplySuffix" class="btn btn-sm btn-outline" disabled>应用</button>
+        </div>
+      </div>
+      <div class="rule-item">
+        <label class="rule-label">删除后缀</label>
+        <div class="rule-row">
+          <input type="text" id="delSuffix" class="rule-input" placeholder="输入要删除的后缀" disabled>
+          <button id="btnRemoveSuffix" class="btn btn-sm btn-outline" disabled>应用</button>
+        </div>
+      </div>
+
+      <!-- 行3：替换文本 + 插入序号 -->
+      <div class="rule-item">
+        <label class="rule-label">查找替换</label>
+        <div class="rule-row">
+          <input type="text" id="findText" class="rule-input rule-input-half" placeholder="查找文本" disabled>
+          <span class="arrow">→</span>
+          <input type="text" id="replaceText" class="rule-input rule-input-half" placeholder="替换为" disabled>
+          <button id="btnReplace" class="btn btn-sm btn-outline" disabled>替换</button>
+        </div>
+      </div>
+      <div class="rule-item">
+        <label class="rule-label">插入序号</label>
+        <div class="rule-row">
+          <label class="inline-label">位置：</label>
+          <select id="seqPosition" class="rule-select" disabled>
+            <option value="prefix">文件名前</option>
+            <option value="suffix">文件名后</option>
+          </select>
+          <label class="inline-label">起始：</label>
+          <input type="number" id="seqStart" class="rule-input rule-input-num" value="1" min="0" disabled>
+          <label class="inline-label">位数：</label>
+          <input type="number" id="seqDigits" class="rule-input rule-input-num" value="2" min="1" max="6" disabled>
+          <button id="btnInsertSeq" class="btn btn-sm btn-outline" disabled>插入</button>
+        </div>
+      </div>
+
+      <!-- 行4：大小写转换 -->
+      <div class="rule-item">
+        <label class="rule-label">大小写转换</label>
+        <div class="rule-row">
+          <select id="caseType" class="rule-select" disabled>
+            <option value="">-- 选择转换方式 --</option>
+            <option value="lower">全部小写</option>
+            <option value="upper">全部大写</option>
+            <option value="title">首字母大写</option>
+          </select>
+          <button id="btnCase" class="btn btn-sm btn-outline" disabled>转换</button>
+        </div>
+      </div>
+      <div class="rule-item">
+        <label class="rule-label">重置</label>
+        <div class="rule-row">
+          <button id="btnResetAll" class="btn btn-sm btn-danger" disabled>🔄 恢复原始文件名</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 文件预览表格 ========== -->
+  <section id="previewPanel" class="preview-panel hidden">
+    <div class="preview-header">
+      <h2 class="section-title">📋 预览列表</h2>
+      <div class="preview-stats">
+        <span id="changeCount" class="change-count"></span>
+        <button id="btnExecute" class="btn btn-success" disabled>✅ 执行重命名</button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="file-table">
+        <thead>
+          <tr>
+            <th class="col-status">状态</th>
+            <th class="col-original">原文件名</th>
+            <th class="col-arrow"></th>
+            <th class="col-renamed">新文件名</th>
+          </tr>
+        </thead>
+        <tbody id="fileTableBody">
+          <!-- 由 app.js 动态填充 -->
+        </tbody>
+      </table>
+      <div id="emptyState" class="empty-state">
+        <p>👆 请先选择一个文件夹开始操作</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 结果提示区 ========== -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,961 @@
+{
+  "version": 1,
+  "skills": {
+    "academy-guide": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/anthropics_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "07075be5acc7c54fd6b06a1e7636608fa195b83eb98cbddb02e61b9ac1356889"
+    },
+    "agent-data-engineer": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "32eb905be73dfb0d17b2521eef97d69c1cfa62271e9bb1e2b614e821eeb1666d"
+    },
+    "agent-fullstack-developer": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "808dcffc8e54bb0bc4a6258dac71e56a1335f35a0561769c9737d6ed15e9f699"
+    },
+    "agent-kubernetes-specialist": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "b9fd09af2d50bdaade3da63142223f7eec85b89572c187a3ba5eef3b0427513b"
+    },
+    "agent-ml-engineer": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "48bc327041d1448f378610148d52342288e2b815e481ec736eae0790e5f846ac"
+    },
+    "agent-performance-engineer": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "cf7c34127c2d050bf01af76ee80c2a8f77a47e066565ca0d3f8c676c25724d1d"
+    },
+    "agent-react-specialist": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "52fe6a77fc31643578a487a9b9330885e324400407dd18f5430203a3eb41232b"
+    },
+    "agent-security-engineer": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "ea6deaff3805f34346fb493528bdf1bb25de76a773e83a68b51da440e2b9bbb8"
+    },
+    "agent-technical-writer": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "a5c939d584c9873efc361bc3b3d7cc7cacaa517717804c4878d8505cc0b520ed"
+    },
+    "algorithmic-art": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/anthropics_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "b2ca295de7f9c86c444f1fa21239e22e0eb7013ced1c652169b9402cc96ff744"
+    },
+    "android-native-dev": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "684fcc00a9c41bc9c148a2f7df705eeb777ec1f0555d6d00d30eeb5939f3195d"
+    },
+    "antfu": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "0aada58e7385bcc85abfd1d184ed7cf3757e1eb9e23d018e44ee6022093c5726"
+    },
+    "antfu-design": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "3fb42ec43179f38f60106e1ba20f46d660d54e916f9362e4c89ba0abaeaa3dfc"
+    },
+    "api-and-interface-design": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "26f5a9e7abfd332d7a2e5887cf19bddd3393f47514c379b36bf227c1f15cdec4"
+    },
+    "artifacts-builder": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "8d69507435408416d8d8081517dddcf0a1e0e2bc8e0484863984b19ff8c6cd58"
+    },
+    "ask": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "fcd40a738eaaf204c1bf16939b6f86a8ad15261c2c9b40ef470daac8aa448070"
+    },
+    "ask-multi": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "c1045ecfd82ab9c5b2bf81463abe4c8dc588d18891ce32ce00dbc75ebaf7a7ce"
+    },
+    "babysit": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "1e0610afc6110fad8c012f44dd5aa09cdd25530198f515f49e5d94eda08a4465"
+    },
+    "brainstorming": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/obra_superpowers/superpowers-main",
+      "sourceType": "local",
+      "computedHash": "b58d55b64742ecd37923985ec7bdfbe678ffbcb9895562abd28c0a32dcacd7fb"
+    },
+    "brand-guidelines": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "4aa754f4f7fc54ac3e7f6e2fb55c0e2fb14b7d70da077b41a86bd1889ff9094c"
+    },
+    "browser-testing-with-devtools": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "639950ea71851d9c4919608cba8b6276cd1ba30cd82acdc4949c701537eed661"
+    },
+    "buddy-sings": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "3c745849e0e92ed342e2972a966192b8f72d9a70a434595fdd2557069d381aa6"
+    },
+    "canvas-design": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "a2fe47d24b3fd8e52faef731fff099c557e698083cd644b2e5695cc4dd8c7715"
+    },
+    "changelog-generator": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "0facdb5c491a654e3b0f6d300fb8fa14472d811cb715c632dc2862919b277dae"
+    },
+    "ci-cd-and-automation": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "578b098a7d2352ccdac8b8abdc40eb6803538e81cf8382f138da6188a655087c"
+    },
+    "claude-api": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/anthropics_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "ed99167a20019ea718db7863ec56fc5ec5c304972789193369f6a4fd6b0f3948"
+    },
+    "cloud-sync": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "e33574d4a9136764f10ae7f33dc3cc983e11e3c19f9f4b243b102eedcc3dc904"
+    },
+    "code-review-and-quality": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "6231479cc74c7ed70a5618b81b3f94034d9806c0319a1a23d15f9b94a368c581"
+    },
+    "code-simplification": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "7973e746e8e2ea5004d520da970c15a106824b8d6be1bcff48908aec021f3677"
+    },
+    "competitive-ads-extractor": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "8367364ae0aefcf0554468308066e39dc81aeaccfcf9922f85de1b7f56ad61a8"
+    },
+    "composio": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composio-community_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "11b975f122ecbf455b437e4e42ebf8f30fad84220894c3d52549eefea92a7795"
+    },
+    "connect": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "85aee775c70ddfba6873dc8dd79b0f957bcadc9c4454c9b5caedb8b6456a733c"
+    },
+    "connect-apps": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "46ff9090ad2709d097f07d621873fb96e8b77ef515d81d48bf532adebfd01d8d"
+    },
+    "content-research-writer": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "de7e9085e875a651f209c826d1a5e7dd5f2436fb38fe565ef76b54492c1a0c22"
+    },
+    "context-engineering": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "bb8864454c5a24636cab86c4b3c4b29e7e7431c80485bfd7c9c0a19a01936510"
+    },
+    "debugging-and-error-recovery": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "1a119d27e8f1d27ed6317adf3115826336491346780dcb7d7a7a7f79fe3ffe10"
+    },
+    "deploy-to-vercel": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/vercel-labs_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "d2b5bcc7c09fdb649129ffc7dd7b647ec1b155736974b974292675afd588cb39"
+    },
+    "deprecation-and-migration": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "55a559781ae92cacd6b75acd509e61b577c2660212d1808da2fbb8dbadc90196"
+    },
+    "design-is": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "f2912e5eb57ebf3dafa2c08fa92af2294309951cef124b83d35214aebc98de8d"
+    },
+    "developer-growth-analysis": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "e3dcbe091bacd9f1afdac53319dea01aace1e50a9d8e64c21c859ab0a89765f5"
+    },
+    "discernment-nudge": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/anthropics_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "fbe8fab770e8e106623525caa342bd2a4c84992cb840377cb57d4365be599be8"
+    },
+    "dispatching-parallel-agents": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/obra_superpowers/superpowers-main",
+      "sourceType": "local",
+      "computedHash": "b011107f17188e0b2898bb1856b5bac8b49537cc86e737c82126558a235bd62a"
+    },
+    "do": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "ac80a2338872768e8d9e24bcad9d7a379019afa062167a20b525c4562405a2a3"
+    },
+    "doc-coauthoring": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/anthropics_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "b964e4c3ffe13f66f76dd7919073e60c7aec622cd8a8363bb36323188100cf8e"
+    },
+    "documentation-and-adrs": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "7464fd2950b99fb00bbf65cab27653e0a049eef00c98927713ffdfe232a9daa9"
+    },
+    "docx": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/anthropics_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "59c70107f8eae818bdfca7da685a6e4111aa519638b667775b794cb74987ec47"
+    },
+    "domain-name-brainstormer": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "911dba9c4e55a47bebbf3d44482579518797a94d5bfc02088a9ed85360df6d2b"
+    },
+    "doubt-driven-development": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "880332887b731e34509974dd6b62c8ae3943367f3b8ca0dd1bbb4479f474f73e"
+    },
+    "executing-plans": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/obra_superpowers/superpowers-main",
+      "sourceType": "local",
+      "computedHash": "78a07800ee99a5861ae10be59d79fad085fdca10444e8aaeb2691597e357cff8"
+    },
+    "file-organizer": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "1b03d0f0879230671fba161b92d732c9ae7e947bfe061cbf008d39fa9df1ed8b"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "computedHash": "b146008599c31057cef1c145774cea5d5afb30e8f43fa802e47a4b461419aaaf"
+    },
+    "finishing-a-development-branch": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/obra_superpowers/superpowers-main",
+      "sourceType": "local",
+      "computedHash": "4f571e7befb8b0946d9d7770232c818812412e9ab1dfb811f847edfba1fc6275"
+    },
+    "flutter-dev": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "40e1256c85dd230474ce69cacbc59fdcbf18c858a7615f73ddaf776d2e900b55"
+    },
+    "frontend-design": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/anthropics_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "4eabc66183767153e404b39d1b839b1c37f2d82d86f0a0d7e880a579d8d62336"
+    },
+    "frontend-dev": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "591284cb0126128a69dee1eb9c088586a9f8e56dcaa6493f750ae21adb8118cf"
+    },
+    "frontend-ui-engineering": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "cb4e981ecb5f701b451fc4e937a38049b49fd4523f213e06cffbd00b007060dc"
+    },
+    "fullstack-dev": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "7cd5ae755a667e445a5a05dcdb6ac2a0a5feae84d183e115a71a8883b2196051"
+    },
+    "gif-sticker-maker": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "1f14db5149edbfa6c6fa242bf003a40bb33e4d7f66a630e19e048bca052b7c25"
+    },
+    "git-workflow-and-versioning": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "8b53153892a21c3a486831bf608970b040ad0e9da698505af58c659242cf835c"
+    },
+    "gitnexus-cli": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "448fdf0948e512a9fbfe7b7d88264e5b4ccdb3572a697f361eae3302baa5667d"
+    },
+    "gitnexus-debugging": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "b19e63afc02af24657ec1e55d8dbfb3097a7dd306cdd735c48ed85630381a9f6"
+    },
+    "gitnexus-exploring": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "00016c0abbc00cb0f390cc66f68e0d4c1e47f890c3b35009a429f2fce3485fe5"
+    },
+    "gitnexus-guide": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "aeb67dc28fb733b525b3eb0e53501d470ef5f714d7972db47cbe8bec393edc7a"
+    },
+    "gitnexus-impact-analysis": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "774374f29963260978e145c259bc297925c1eb5ae09a7bb44e0c211d696ca2ba"
+    },
+    "gitnexus-refactoring": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "908e1a6a537c46bf50e77dab7c38a796be430ee038936f8714cee3e416e4dae2"
+    },
+    "how-it-works": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "121ff2926b3de14b8b1ffdb883b736004a3b25e3fcb3589ca386ecca5bff1900"
+    },
+    "idea-refine": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "9fc0ae5d8a074872a636d22f9c6fe71e041b86cddc9fe5af90ef654f5032ec5d"
+    },
+    "image-enhancer": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "2fbd9f8dadf7de2e93844d0626a46f1096925ee78f41174f4c261604b39828ca"
+    },
+    "incremental-implementation": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "bd40e91eac68b83ba0204dd57b4bd35511cb900f937a7127b79f2396b2bb305d"
+    },
+    "internal-comms": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "b36b333bee983462008af46d74689ae5832c2f79ae5f2c18680ee82f6e6bef56"
+    },
+    "interview-me": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "efded91ac7f7626239b338ce8622afeb557151b86532b632f3c9eb5b2ff9048f"
+    },
+    "invoice-organizer": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "3981cc7b74330cb508ffd53e03664e94eb3413b9fbf9fd14a123774de15a8499"
+    },
+    "ios-application-dev": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "62e475d290a760e8a24085a35381258e7595297da16157ac8bc11aea340c2d9a"
+    },
+    "knowledge-agent": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "52a8f2c5351a0b73b3c55296c3dcd46ade6070f66f0d59ccd01832a9f77123f6"
+    },
+    "langsmith-fetch": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "7953660eee3f80ce985956e4ad2ed1f551efca6aad596b7f3479d5a829602180"
+    },
+    "lead-research-assistant": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "08cf5477dfdcbefa0758fad431c226efb9f09e108c8c6477b4a14db2d6810889"
+    },
+    "learn-codebase": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "9142aab8302123f63d8db49430d1f59e2ff2bdcb885d6b3f054f22f7d92f5791"
+    },
+    "learned-skills-index": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "63088da1d2a6d1ad3996be2f3bc2a0f5383de67351e33fd40215411f9c6a434b"
+    },
+    "make-plan": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "828c96bc3eab1c8c46db001b3a6a71fe07dfb32814081678ddfe067ba0978664"
+    },
+    "mcp-builder": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "796e369a513fe27a0eb5461611dec6bf943da7992194ddec1291f4fa34fb28cb"
+    },
+    "meeting-insights-analyzer": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "73d94649632b9b146bb9a745a31efcbc315a8916f14619a327f009b54d1be656"
+    },
+    "mem-search": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "6058bee763732e6c85f77523e97ad27f476e73ee44fbfdcf105a218ef1dd52e0"
+    },
+    "minimax-docx": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "871a00d2af2f55a2101a5f0235ec4b76f7cff13e063c492e5b6ecdf05da1ff7a"
+    },
+    "minimax-music-gen": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "f9f03e78e0444c65d2732c600657f3f283e7563539b5cb044b31b6b7f2727559"
+    },
+    "minimax-music-playlist": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "43a844569a8810c31328d9ca981b1198e403d26e9635d719687f41612462acf2"
+    },
+    "minimax-pdf": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "db641f4619ccf2e415693e9e150e61016ed2ad45a485587664f03449b5ee5823"
+    },
+    "minimax-xlsx": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "a2d461c5265b6bb52e48509d3b2e368a357467478f2d6f4ec9dbf8d2ab258b29"
+    },
+    "mmx-cli": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "40e743e291f252a2f325c307eabc767f25c40287a51b1e964ee23a799548025d"
+    },
+    "mode-creator": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "4f54fd5ffb5cbe3436beddd1051b043cae60694a7b5f48e0ff6b29e4a912183b"
+    },
+    "nitro": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "f8341eaf6fbdc604c2c8123a275407acea5a74ad3b0870cdd0ed2a3007e36c12"
+    },
+    "nuxt": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "96dbdbfc06bf7045aeb9a463b972d5c0b5679d6dadf196d8ef6b98dc6defed2d"
+    },
+    "observability-and-instrumentation": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "6a22881e154faa94c7312ff1a083309a4ac75dd2b8c05eceef9fc3d7ba3827e5"
+    },
+    "oh-my-issues": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "cee3669201ddc7eb488e3c20699ad46428ded9ff29e98c7c1fbfc696e1d29cfd"
+    },
+    "pathfinder": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "96bf2edcbffd36a3119d4dea942561b02ecf355cc872d73cf21cc346092e3db2"
+    },
+    "pdf": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/anthropics_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "cfbc539377088ca7e44a813b30c306327385bbd973cd7a721e1743f60837dd62"
+    },
+    "performance-optimization": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "cd729dc7d35b5c2d17fd574dd08f765f0a2775117f01da2f65a6b25c21e879bb"
+    },
+    "pi-planning-with-files": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/othmanadi_planning-with-files/planning-with-files-master",
+      "sourceType": "local",
+      "computedHash": "1d3dccb729a2a7fbf00e91d46b96d2f00582bd2f2cf489f5b83a7835324dff47"
+    },
+    "pinia": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "897b6b0982956f41f5cc85128ca638b625e1b3c8bc619e303cd1e7661c95b7de"
+    },
+    "planning-and-task-breakdown": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "f6c2cc012101225c58e5886e847342d1efaf0336a8e150b833d617fdf092952c"
+    },
+    "planning-with-files": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/othmanadi_planning-with-files/planning-with-files-master",
+      "sourceType": "local",
+      "computedHash": "5fb355a4614c99b2dedf69c54d221f15a27bd8f775b98fcaaa9d5549cf5f13ce"
+    },
+    "planning-with-files-ar": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/othmanadi_planning-with-files/planning-with-files-master",
+      "sourceType": "local",
+      "computedHash": "71d68c12cb25ca6b9bdbd263edd38969803463078b8c83e523a61b593ab63849"
+    },
+    "planning-with-files-de": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/othmanadi_planning-with-files/planning-with-files-master",
+      "sourceType": "local",
+      "computedHash": "de629fc88acbc9930e7b95edd6ceeb45cb28dbfaf6502e1be0f89618531d4cab"
+    },
+    "planning-with-files-es": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/othmanadi_planning-with-files/planning-with-files-master",
+      "sourceType": "local",
+      "computedHash": "58daa1463a3f7e6362a6d4b0462e42e7cf93808bbf48beb485ae74b30420c56a"
+    },
+    "planning-with-files-zh": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/othmanadi_planning-with-files/planning-with-files-master",
+      "sourceType": "local",
+      "computedHash": "8c73b1bfcb380587ddd4dbc31e61c0fefb661b355750626b0b5fd8ad1585a0ec"
+    },
+    "planning-with-files-zht": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/othmanadi_planning-with-files/planning-with-files-master",
+      "sourceType": "local",
+      "computedHash": "ff910e40e22e8eab3e3f8d22ea43cd3456a6f48e04357f33e7286bae5e0240b8"
+    },
+    "pnpm": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "2ec08c851c6f901d4ed72c21b826416ed074a487db65662b36249418afd728bf"
+    },
+    "pptx": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/anthropics_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "82eaf5daede5a1779aa17ccf06597cb209a0c2bd41d3a2f18bd45e0301a387fb"
+    },
+    "pptx-generator": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "956dcd3e9c6d0b4f174f65ae0046dc51217df2436a38aea08a91f75701db6b52"
+    },
+    "pr-review": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "421546df9e66866ba83819415880517b7d5d60a054d4357d094f57bc1a82234b"
+    },
+    "raffle-winner-picker": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "cd97da2fa280d9545b6f60dfc07335663af4932acb58d83d6801a1bb3b8a8aae"
+    },
+    "react-native-dev": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "827c7eface68571962ac5cea748bb3d8fec6f11a58ef1759734f0555883df380"
+    },
+    "receiving-code-review": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/obra_superpowers/superpowers-main",
+      "sourceType": "local",
+      "computedHash": "59361179fc9225173e0c145ffd9bafbf9fdbf8b43ce3dc308497a0b4f83a6063"
+    },
+    "requesting-code-review": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/obra_superpowers/superpowers-main",
+      "sourceType": "local",
+      "computedHash": "004f340ae65811095d6a9bb0a759c87d0a8085c5e705dbb019b011626293d2e9"
+    },
+    "sc-analyze": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "ce302d14750002c74c29bd1b68fe7c716fa54949cddec56f62b8f239e73b8f88"
+    },
+    "sc-brainstorm": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "41526dcd7cc1d539b777de19baac0ab8ed4d7df19a982d806a83635b8924efb3"
+    },
+    "sc-build": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "fd675157beb664cb0db000bdc52a22dd360b5163c61bceb1018e04a6e2492c00"
+    },
+    "sc-code-review": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "415583acf89e1643f12acd7b0d38c6b57049372332592fa22d883330f9594fc5"
+    },
+    "sc-design": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "9c895499d15cda1a5bc15da4b5df7a2a8634cbb8fe9014d358f62d2df7e8bcc8"
+    },
+    "sc-document": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "1a4539c5a6a02c42c1a3c5998db9b0eece485341b46f3a7354b3ad04988ac631"
+    },
+    "sc-e2e": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "acad19dea24fc9e5a7a3f5a90e741f4d05a10eee8ef57f4d43f4062514df96e3"
+    },
+    "sc-estimate": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "ff402f49b9536007722c0ecc8c049891d07326900142219a6125738a4cba9d6f"
+    },
+    "sc-evaluate": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "c8d1e7ecf0d50965273843ab040330c27bef3aa4cf9ff0b4d1b331bab93e40cc"
+    },
+    "sc-explain": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "594d44473794905a45a4e0b361187a0120037f375918949162da4992459e322c"
+    },
+    "sc-git": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "21c90891c4684272d347883e9e41cb786169acb294a5df8e5fc0dfc69f84e405"
+    },
+    "sc-implement": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "07186bdec8f4056fe455c6c0df08e67120f5a90fc29ef6f253564c5319a02d72"
+    },
+    "sc-improve": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "33adc1e49bb9460f78bd905893bae1e6d011d237999b6f26ab0cd88a9538a8e0"
+    },
+    "sc-log-fix": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "1a63a63e7f6e6ef384d7748ba32bf780f5c547c670f2dc45b1181b4dd94cd5a5"
+    },
+    "sc-mcp": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "3945d38a5b4ca99bc0cd25921c413d102062a2e63bfd01445acf3045c97afd6c"
+    },
+    "sc-pr-check": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "50cff7b101c2711a09337193c450c83ec8dcecb0c5aebe14b4fb42061c85e0e6"
+    },
+    "sc-pr-fix": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "f6fae327d3a40b17d2a0a3be1cbbf1d01b33460d5a9211f0f703c30d317bfb01"
+    },
+    "sc-principles": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "49f6c5f1b4f491d4c41458e6152d60bce799ac874e0f0b809ba6c98de70af731"
+    },
+    "sc-push": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "b2eed5b0b471e22fa5aee04458eb063df863e64cdfc85e26ebd622c110b43a05"
+    },
+    "sc-readme": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "75e1cf43d04bcfa0695ef4087ad933abfcc9ed24ebfa21dc3da7f23663addc0a"
+    },
+    "sc-research": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "153076f0536d33946c29fc31f40ddf66a2b8acd9073bc308f692456700549bb2"
+    },
+    "sc-tdd": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "98b395d7adf4f6961e2201f3677f7b286b0635b71900d3a02941b3aecffa9cc0"
+    },
+    "sc-test": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "a923cdd63ae90553ddea9ce151f4d1cef535c37601a814511f5023b1758aa50d"
+    },
+    "sc-workflow": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "13a788ef8d19b24fa53487d2e4bcd3c92c563441611d8f565e538152465297a6"
+    },
+    "sc-worktree": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/tony363_superclaude/SuperClaude-main",
+      "sourceType": "local",
+      "computedHash": "933b95e8ecf31ee920a4954a8d6e621a25d5d993994d0f10dc4d2c29ad88f68b"
+    },
+    "security-and-hardening": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "47d027526d7e0be784a19a034f18cba328009b3c8fe483f16e4b12530cf82183"
+    },
+    "shader-dev": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "169d2cc594e0962e37f1cc58aef6d2efcf78f3408627bd909383d8724a133cd9"
+    },
+    "shipping-and-launch": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "47c62d418e9f3f395092864e6080b5c4b84fe3ef8abbbb6a3397ed655dda0ba8"
+    },
+    "skill-creator": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composio-community_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "a096b9af85c9d954374ebe3f7a23b5b7737ed3f35fe2a8f5893742c4e00dba1c"
+    },
+    "skill-share": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "09f71aa830cb200d355ff6103958d85ecd33121c4454e3b8c2d60b70c88e05cc"
+    },
+    "slack-gif-creator": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "6139cf556d1dd78b69c1dd84af43c132db391b6f31e67de38d1edb4551ba93e0"
+    },
+    "slidev": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "c1e4be1019bf486f99eb534ba3d5e3c402ed3020960b51faf607692480607fb6"
+    },
+    "smart-explore": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "9a1725dd93477d0b1c698f3b47734dc10491c6edeb89cb728d2f33ab4ac35fce"
+    },
+    "source-driven-development": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "c48d3c3abb2cb8a5c4a8584ab95db64f8a0261f3acfe2cdb7b8ff88ec3d90211"
+    },
+    "spec-driven-development": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "aca026683acdae1cd8a58f335fb26e60fb5db11ae81461a6896b0bf561aacb75"
+    },
+    "standup": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "d297e73c460cc806b578f7c4a97ada138035320d7d53cff4357e5d9ce9664631"
+    },
+    "subagent-driven-development": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/obra_superpowers/superpowers-main",
+      "sourceType": "local",
+      "computedHash": "367cc1d3216d6672b947c8c6583dbd6440ea407beb6da75a97d3a8ee1a23640a"
+    },
+    "systematic-debugging": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/obra_superpowers/superpowers-main",
+      "sourceType": "local",
+      "computedHash": "a2750dfbaed1690da73b120254892c4f926b4576cb82eb16fc877783941fe39b"
+    },
+    "tailored-resume-generator": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "37ad72564c908b09bcccc8a34087bef06b12b4c38dc68d76cddba5afc588bd92"
+    },
+    "template-skill": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "38c88f722b574a922311d334a70c2008a2a5b896f06eaa75516d716e5725b26f"
+    },
+    "test-driven-development": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "a8fef2b010af8402fd2979bdb2e5e39e5baa1ca14b5cdec366ee75df5e1dec68"
+    },
+    "theme-factory": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "93e78aa44f8fa00bb2c0608f400de1e1dcd6494611dd8ea27c867654240c7bcd"
+    },
+    "timeline-report": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "b2194d39219a5baa62b5f9373b1cc04b8020ddebed8496d2eb7da9a729fbc99c"
+    },
+    "tsdown": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "2183b9019058744215ab8b1261e34833653b5864da159bc022e3b9ad2f706aa5"
+    },
+    "turborepo": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "fda851d916bbee5b78446b9a22510e7f38aefdfab57f93de6e0bccbb5b0b537a"
+    },
+    "twitter-algorithm-optimizer": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "4dacb151d9267f390a2a1aa5ff06ea984c2270f6a188315dcb8a65cd0d4bcf34"
+    },
+    "unocss": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "4b7a9f7b89994d5aef70b9d55cb7f65d6e80cea437d5786cd33bb5cf7231c7c4"
+    },
+    "using-agent-skills": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/addyosmani_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "636ae59f809148bcb82b5f8dc5ae5204fba0724f1a34d7cd75890f1ad60990a2"
+    },
+    "using-git-worktrees": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/obra_superpowers/superpowers-main",
+      "sourceType": "local",
+      "computedHash": "48c8a1040e378e0cb7208107294e3afa9067b9370c3f33b49a443eb6b7528b0d"
+    },
+    "using-superpowers": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/obra_superpowers/superpowers-main",
+      "sourceType": "local",
+      "computedHash": "c7abe8bdc2099bbe4f245454d32c7563ccd2bb41dcc218b02b461c2acc3c6ae6"
+    },
+    "vercel-cli-with-tokens": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/vercel-labs_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "a2f596ac516fe8986386f9562f4c94604af9fb6a0fc417d263cbe6dc05117b72"
+    },
+    "vercel-composition-patterns": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/vercel-labs_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "f98931159fa9c7fed043bcd18a891a46dcf89ababa38df13a4c5b7b30dc0ce07"
+    },
+    "vercel-optimize": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/vercel-labs_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "9d4ace02972b9b1c462f097c7322eb32c9f04bba6f2fb5cf482086d402eeec33"
+    },
+    "vercel-react-best-practices": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/vercel-labs_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "3219a1944e404ffc14d1d9d6aef6dd2e3855b81387ee0a044ccbfe14d34c2357"
+    },
+    "vercel-react-native-skills": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/vercel-labs_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "2e9088a7333666d8c2833b8ff58bd51b955501c42b4c7244f72b4cbf22dafcc4"
+    },
+    "vercel-react-view-transitions": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/vercel-labs_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "7336975cd031be2fabc262724dc44a38222c74c07f967d39258d635b3fba7146"
+    },
+    "verification-before-completion": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/obra_superpowers/superpowers-main",
+      "sourceType": "local",
+      "computedHash": "b529822bdac4b197b180fe12225cff86b930b65910435103c10622df7f041651"
+    },
+    "version-bump": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "ff2b16d823f09e2252753a4103385870c0e7f9fbfd744d6f6004a9ff0904c4ae"
+    },
+    "vision-analysis": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/minimax-ai_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "d8613867cf2abde3854f94432668c10a7c0c95f5c73be3ac73a70bfa1b74311e"
+    },
+    "vite": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "867ff66238f3152e9c494339ad08dc432dd0df5bcf5cc7a00b61a72b580eb908"
+    },
+    "vitepress": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "629d8ec4bcbf7cac86c15c3ca5f173933f01729bcb6396c0d74733755a896a41"
+    },
+    "vitest": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "943d436114c677802426741980146c07560bf375297666b03062444f4b98a785"
+    },
+    "vue": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "9c241141e07e836e4f0537c63e8f929fba3767c2997250be38e699f19b75e3f2"
+    },
+    "vue-best-practices": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "d7d22c8cb343583c3904692c4d1d7b50382945e433e4f6e053f4aabb9846cbc3"
+    },
+    "vue-router-best-practices": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "e27384f4e6c8c70a612e76b74e4387efb8e291a6a1e3aa14a69102a4ce4b4654"
+    },
+    "vue-testing-best-practices": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "18c7d8f42f350f927e37de055e34c97b8cfb9f79c12cf942f7f3d2a0821057b5"
+    },
+    "vueuse-functions": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "5f32cd5f744671178284887c9ffc27a080e0e3316c0f7c3b22f4459c760daf49"
+    },
+    "web-artifacts-builder": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/anthropics_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "d52d422ead3fa26859a6af129609841a8536b230a2d649f86e61771d063e05e2"
+    },
+    "web-design-guidelines": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/antfu_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "65a2e7d85753383ae0f88df15475d58b9e39723e9c4bb6891421d6144a85f79c"
+    },
+    "webapp-testing": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "cf8e5916d474886bd67b09691247f43f331523008b7d366064bc607ab42d6302"
+    },
+    "weekly-digests": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "7f7c19f47354e23952205ed63e828f4b953d830a24f0d93d45e119d9db6e87d5"
+    },
+    "what-the": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "89d95f90e4299972cec11765a2db44dd4cb60c8c9f10b58eebfbcb1eec7aaf41"
+    },
+    "wowerpoint": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/claude-mem/claude-mem-main",
+      "sourceType": "local",
+      "computedHash": "1f3e37d16463d0a9a55b178f3fb0325f10906891a3e2ec1bdbb970696190d5a5"
+    },
+    "writing-guidelines": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/vercel-labs_agent-skills/agent-skills-main",
+      "sourceType": "local",
+      "computedHash": "e90462d4f801d823603b12c345ad0ff91a7489415274432681d21c7129123c26"
+    },
+    "writing-plans": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/obra_superpowers/superpowers-main",
+      "sourceType": "local",
+      "computedHash": "27c75044e444a4fc68798c3f799dc23eaff3a6bfabff32e6ad75bb20f881c094"
+    },
+    "writing-skills": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/obra_superpowers/superpowers-main",
+      "sourceType": "local",
+      "computedHash": "e5dfc1a942f56dc757421b0d87ae1f38ab693ebc71138e65268fd408bb5c93d3"
+    },
+    "xlsx": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/anthropics_skills/skills-main",
+      "sourceType": "local",
+      "computedHash": "f5945e6e76dc7c178375e5cdf3140959b30cbcd4570ec3dc62296812259fc38d"
+    },
+    "youtube-downloader": {
+      "source": "C:/Users/Administrator/AppData/Local/Temp/skills-install/composiohq_awesome-claude-skills/awesome-claude-skills-master",
+      "sourceType": "local",
+      "computedHash": "3e4e2304770b72777cabb2b03fb94503adecc9917e9c02ba295dbce31b75d791"
+    }
+  }
+}

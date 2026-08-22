@@ -65,16 +65,15 @@ function loadJSON(p) {
   return null;
 }
 
-// 将模板中 async function loadData() {...} 替换为内嵌数据返回
+// 将模板中 INLINE_DATA 占位符替换为内嵌数据返回
 function inlineData(html, data) {
   const dataJson = JSON.stringify(data);
-  const pattern = /async function loadData\(\)\s*\{[\s\S]*?\n\}/;
-  if (!pattern.test(html)) {
-    console.error('  ⚠ 模板中未找到 loadData 函数，无法内嵌数据');
+  const placeholder = "window.INLINE_DATA = (typeof __DASHBOARD_DATA__ !== 'undefined') ? __DASHBOARD_DATA__ : null;";
+  if (!html.includes(placeholder)) {
+    console.error('  ⚠ 模板中未找到 INLINE_DATA 占位符，无法内嵌数据');
     return null;
   }
-  const replacement = 'async function loadData() {\n  // 数据已内嵌（由 build_site.js 生成）\n  return __INLINE_DATA__;\n}';
-  return html.replace(pattern, replacement.replace('__INLINE_DATA__', dataJson));
+  return html.split(placeholder).join('window.INLINE_DATA = ' + dataJson + ';');
 }
 
 // 生成聚合首页

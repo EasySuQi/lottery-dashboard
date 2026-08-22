@@ -21,7 +21,7 @@ node "$SCRIPT_DIR/fetch_and_analyze.js"
 
 echo ""
 echo "[2/3] 发送通知..."
-node "$SCRIPT_DIR/send_notify.js" feishu || echo "  ⚠ 通知发送失败（不影响数据更新）"
+node "$SCRIPT_DIR/send_notify.js" feishu --only-when-new || echo "  ⚠ 通知发送失败（不影响数据更新）"
 
 echo ""
 echo "[3/3] 发布站点到 GitHub Pages..."

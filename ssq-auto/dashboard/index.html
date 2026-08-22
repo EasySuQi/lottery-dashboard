@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔴🔵 双色球 · 分区冷热分析仪表盘</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  /* ===== 设计变量（明/暗双主题） ===== */
+  :root {
+    --bg: #f1f5f9; --card-bg: #ffffff; --text: #1e293b; --text-2: #64748b;
+    --red: #dc2626; --red-2: #991b1b; --blue: #1d4ed8; --blue-2: #1e3a8a;
+    --gold: #b45309; --hot: #ef4444; --warm: #f59e0b; --cold: #3b82f6; --ice: #94a3b8;
+    --border: #e2e8f0; --shadow: 0 1px 3px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.08);
+    --card-hover: 0 4px 8px rgba(15,23,42,.08), 0 10px 28px rgba(15,23,42,.14);
+    --header-grad: linear-gradient(135deg, #dc2626 0%, #b91c1c 45%, #7f1d1d 100%);
+    --soft: #fff7ed; --soft-border: #fed7aa; --table-head: #f8fafc; --row-hover: #fef2f2;
+    --tag-hot-bg: #fee2e2; --tag-warm-bg: #fef3c7; --tag-cold-bg: #dbeafe; --tag-ice-bg: #f1f5f9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f172a; --card-bg: #1e293b; --text: #e2e8f0; --text-2: #94a3b8;
+      --red: #f87171; --red-2: #fca5a5; --blue: #60a5fa; --blue-2: #93c5fd;
+      --gold: #fbbf24; --hot: #f87171; --warm: #fbbf24; --cold: #60a5fa; --ice: #64748b;
+      --border: #334155; --shadow: 0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.35);
+      --card-hover: 0 4px 8px rgba(0,0,0,.5), 0 10px 28px rgba(0,0,0,.5);
+      --header-grad: linear-gradient(135deg, #991b1b 0%, #7f1d1d 45%, #450a0a 100%);
+      --soft: #3a2414; --soft-border: #7c2d12; --table-head: #1e293b; --row-hover: #2c1a1a;
+      --tag-hot-bg: #4c1d1d; --tag-warm-bg: #4a3410; --tag-cold-bg: #172554; --tag-ice-bg: #1e293b;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f172a; --card-bg: #1e293b; --text: #e2e8f0; --text-2: #94a3b8;
+    --red: #f87171; --red-2: #fca5a5; --blue: #60a5fa; --blue-2: #93c5fd;
+    --gold: #fbbf24; --hot: #f87171; --warm: #fbbf24; --cold: #60a5fa; --ice: #64748b;
+    --border: #334155; --shadow: 0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.35);
+    --card-hover: 0 4px 8px rgba(0,0,0,.5), 0 10px 28px rgba(0,0,0,.5);
+    --header-grad: linear-gradient(135deg, #991b1b 0%, #7f1d1d 45%, #450a0a 100%);
+    --soft: #3a2414; --soft-border: #7c2d12; --table-head: #1e293b; --row-hover: #2c1a1a;
+    --tag-hot-bg: #4c1d1d; --tag-warm-bg: #4a3410; --tag-cold-bg: #172554; --tag-ice-bg: #1e293b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); transition: background .3s, color .3s; min-height: 100vh; }
+
+  /* ===== 头部 ===== */
+  .header { background: var(--header-grad); color: #fff; padding: 22px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
+  .header h1 { font-size: 1.45em; letter-spacing: .5px; display: flex; align-items: center; gap: 8px; }
+  .header .meta { font-size: .85em; opacity: .92; margin-top: 4px; }
+  .header-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .header-right .latest { text-align: right; font-size: .85em; line-height: 1.5; }
+  .theme-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.14); color: #fff; font-size: 1.05em; cursor: pointer; transition: transform .2s, background .2s; }
+  .theme-btn:hover { transform: scale(1.08); background: rgba(255,255,255,.25); }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 22px; }
+  .row { display: grid; gap: 16px; margin-bottom: 16px; }
+  .row-4 { grid-template-columns: repeat(4, 1fr); }
+  .row-3 { grid-template-columns: 2fr 1fr 1fr; }
+  .row-2 { grid-template-columns: 1fr 1fr; }
+  .row-2-1 { grid-template-columns: 2fr 1fr; }
+  @media (max-width: 1080px) { .row-4, .row-3, .row-2, .row-2-1 { grid-template-columns: 1fr; } }
+
+  /* ===== 卡片 ===== */
+  .card { background: var(--card-bg); border-radius: 12px; padding: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); transition: box-shadow .25s, transform .25s, background .3s; }
+  .card:hover { box-shadow: var(--card-hover); }
+  .card h3 { font-size: .95em; margin-bottom: 14px; color: var(--text); border-bottom: 2px solid var(--red); padding-bottom: 8px; display: flex; align-items: center; gap: 7px; font-weight: 600; }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-item { text-align: center; padding: 12px 8px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border); }
+  .stat-value { font-size: 1.7em; font-weight: 800; letter-spacing: .5px; }
+  .stat-value.red { color: var(--red); }
+  .stat-value.blue { color: var(--blue); }
+  .stat-value.gold { color: var(--gold); }
+  .stat-label { font-size: .78em; color: var(--text-2); margin-top: 3px; }
+
+  /* ===== 号码球 ===== */
+  .ball { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; font-weight: 700; font-size: .92em; margin: 2px; color: #fff; box-shadow: inset 0 -2px 4px rgba(0,0,0,.25), 0 1px 3px rgba(0,0,0,.2); }
+  .ball.red { background: linear-gradient(145deg, #ef4444, #b91c1c); }
+  .ball.blue { background: linear-gradient(145deg, #3b82f6, #1d4ed8); }
+  .ball.small { width: 30px; height: 30px; font-size: .78em; }
+
+  /* ===== 标签 ===== */
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 20px; font-size: .72em; font-weight: 700; margin-left: 4px; }
+  .tag.hot { background: var(--tag-hot-bg); color: var(--hot); }
+  .tag.warm { background: var(--tag-warm-bg); color: #b45309; }
+  .tag.cold { background: var(--tag-cold-bg); color: var(--blue); }
+  .tag.ice { background: var(--tag-ice-bg); color: var(--text-2); }
+  :root[data-theme="dark"] .tag.warm { color: var(--warm); }
+
+  /* ===== 推荐组 ===== */
+  .pred-group { background: var(--soft); border: 1px solid var(--soft-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .pred-group h4 { color: var(--red); margin-bottom: 8px; font-size: .92em; }
+  .pred-detail { font-size: .82em; color: var(--text-2); margin-top: 7px; }
+
+  /* ===== 复盘进度条 ===== */
+  .review-bar { margin: 6px 0; display: flex; align-items: center; gap: 8px; }
+  .review-bar .bar-bg { flex: 1; height: 18px; background: var(--bg); border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+  .review-bar .bar-fill { height: 100%; border-radius: 9px; transition: width .6s ease; }
+  .review-bar .bar-fill.good { background: linear-gradient(90deg, #22c55e, #16a34a); }
+  .review-bar .bar-fill.ok { background: linear-gradient(90deg, #f59e0b, #d97706); }
+  .review-bar .bar-fill.bad { background: linear-gradient(90deg, #ef4444, #dc2626); }
+
+  /* ===== 热力格 ===== */
+  .heat-cell { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; margin: 2px; border-radius: 6px; color: #fff; font-weight: 700; font-size: .78em; flex-direction: column; line-height: 1.1; }
+  .heat-cell small { font-size: .68em; font-weight: 400; opacity: .85; }
+  .heat-0 { background: var(--tag-ice-bg); color: var(--text-2); }
+  .heat-1 { background: #93c5fd; color: #1e3a8a; }
+  .heat-2 { background: #3b82f6; color: #fff; }
+  .heat-3 { background: #f59e0b; color: #fff; }
+  .heat-4 { background: #ef4444; color: #fff; }
+  .heat-5 { background: #b91c1c; color: #fff; }
+
+  /* ===== 表格 ===== */
+  table { width: 100%; border-collapse: collapse; font-size: .82em; }
+  th { background: var(--table-head); padding: 9px 6px; text-align: center; font-weight: 600; border-bottom: 2px solid var(--border); white-space: nowrap; }
+  td { padding: 7px 6px; text-align: center; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: var(--row-hover); }
+  .table-wrap { overflow-x: auto; }
+
+  canvas { max-height: 280px; }
+
+  .footer { text-align: center; padding: 22px; color: var(--text-2); font-size: .8em; line-height: 1.8; border-top: 1px solid var(--border); margin-top: 8px; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: .72em; font-weight: 700; background: rgba(255,255,255,.18); margin-left: 8px; vertical-align: middle; }
+  .loading { text-align: center; padding: 70px; color: var(--text-2); }
+  .error-box { text-align: center; padding: 60px; color: #ef4444; }
+  .legend-row { text-align: center; margin-top: 8px; font-size: .75em; color: var(--text-2); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🔴🔵 双色球 分区冷热分析仪表盘</h1>
+    <div class="meta" id="headerMeta">加载中...</div>
+  </div>
+  <div class="header-right">
+    <div class="latest" id="headerRight"></div>
+    <button class="theme-btn" id="themeToggle" title="切换深色/浅色模式">🌙</button>
+  </div>
+</div>
+
+<div class="container" id="app">
+  <div class="loading">⏳ 正在加载数据...</div>
+</div>
+
+<div class="footer">
+  <p>数据来源: 中国福利彩票发行管理中心 (cwl.gov.cn) | 图表引擎: Chart.js</p>
+  <p>⚠️ 以上为历史数据统计推演，不构成任何投注建议。彩票开奖为独立随机事件，历史频率不代表未来走势。请理性购彩，量力而行。</p>
+</div>
+
+<script>
+// ====== 内嵌数据（standalone 版由生成脚本注入；在线版为 null） ======
+window.INLINE_DATA = (typeof __DASHBOARD_DATA__ !== 'undefined') ? __DASHBOARD_DATA__ : null;
+
+async function loadData() {
+  if (window.INLINE_DATA) return window.INLINE_DATA;
+  try {
+    const resp = await fetch('../data/dashboard_data.json');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return await resp.json();
+  } catch(e) {
+    console.error('数据加载失败:', e);
+    return null;
+  }
+}
+
+// ====== 深色/浅色模式 ======
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  try { localStorage.setItem('ssq-theme', theme); } catch(_) {}
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  const c = getComputedStyle(document.documentElement).getPropertyValue('--text-2').trim();
+  if (typeof Chart !== 'undefined') { Chart.defaults.color = c; }
+}
+
+function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem('ssq-theme'); } catch(_) {}
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved || (prefersDark ? 'dark' : 'light'));
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.addEventListener('click', () => {
+    const cur = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(cur);
+    if (window.__charts && window.__charts.length) { window.__charts.forEach(c => c.destroy()); window.__charts = []; }
+    document.getElementById('app').innerHTML = '<div class="loading">⏳ 正在重新渲染...</div>';
+    render();
+  });
+}
+
+function pad(n, len) { return String(n).padStart(len || 2, '0'); }
+function heatClass(cnt) {
+  if (cnt >= 6) return 'heat-5'; if (cnt >= 4) return 'heat-4';
+  if (cnt >= 3) return 'heat-3'; if (cnt >= 2) return 'heat-2';
+  if (cnt >= 1) return 'heat-1'; return 'heat-0';
+}
+
+async function render() {
+  const data = await loadData();
+  if (!data) {
+    document.getElementById('app').innerHTML = '<div class="error-box">❌ 数据加载失败，请确认已运行 fetch_and_analyze.js 生成数据。<br><br>提示：若直接双击打开本文件，请改用同目录下的 <b>index_standalone.html</b>（内嵌数据版）。</div>';
+    return;
+  }
+
+  document.getElementById('headerMeta').textContent =
+    '📅 数据更新: ' + new Date(data.generatedAt).toLocaleString('zh-CN') + '  |  ' + data.dataRange.totalDraws + ' 期数据 (第 ' + data.dataRange.earliestIssue + ' ~ ' + data.dataRange.latestIssue + ' 期)';
+  document.getElementById('headerRight').innerHTML =
+    '最新开奖: <b>第 ' + data.latestDraw.code + ' 期</b><br>' + data.latestDraw.date +
+    (window.INLINE_DATA ? '<br><span class="badge">内嵌数据</span>' : '<br><span class="badge">在线加载</span>');
+
+  let html = '';
+
+  // Row 1: 最新开奖 + 统计
+  html += '<div class="row row-4">';
+  html += '<div class="card"><h3>📅 最新开奖</h3><div style="text-align:center;font-weight:bold;">第 ' + data.latestDraw.code + ' 期</div><div style="text-align:center;color:var(--text-2);font-size:.85em;">' + data.latestDraw.date + '</div><div style="text-align:center;margin:12px 0;">';
+  html += data.latestDraw.reds.map(n => '<span class="ball red">' + pad(n) + '</span>').join('');
+  html += '<span class="ball blue">' + pad(data.latestDraw.blue) + '</span>';
+  html += '</div></div>';
+
+  html += '<div class="card"><h3>📊 统计摘要</h3><div class="stat-grid">';
+  html += '<div class="stat-item"><div class="stat-value red">' + data.dataRange.totalDraws + '</div><div class="stat-label">总期数</div></div>';
+  html += '<div class="stat-item"><div class="stat-value blue">' + Object.values(data.redFrequency).filter(c => c >= 5).length + '</div><div class="stat-label">🔥 红球热号 (>=5次)</div></div>';
+  html += '<div class="stat-item"><div class="stat-value" style="color:var(--warm);">' + Object.values(data.blueFrequency).filter(c => c >= 3).length + '</div><div class="stat-label">🔥 蓝球热号 (>=3次)</div></div>';
+  html += '<div class="stat-item"><div class="stat-value gold">' + (data.fullCoverageRate * 100).toFixed(0) + '%</div><div class="stat-label">三区全覆盖率</div></div>';
+  html += '</div></div>';
+
+  html += '<div class="card"><h3>🔗 连号率</h3><div style="text-align:center;padding:20px;"><div style="font-size:2em;font-weight:800;color:' + (data.consecutiveRate >= 0.6 ? 'var(--hot)' : 'var(--warm)') + ';">' + (data.consecutiveRate * 100).toFixed(0) + '%</div><div style="color:var(--text-2);font-size:.85em;">近30期含连号比例</div></div></div>';
+
+  html += '<div class="card"><h3>🔵 蓝球热号 Top 6</h3><div style="text-align:center;">';
+  for (let i = 0; i < Math.min(6, data.blueRanking.length); i++) {
+    const b = data.blueRanking[i];
+    html += '<span class="ball blue small">' + b.num + '</span><span class="tag ' + b.label.toLowerCase() + '">' + b.label + '</span><small style="color:var(--text-2);margin-right:6px;">' + b.count + '次</small>';
+  }
+  html += '</div></div>';
+  html += '</div>';
+
+  // Row 2: 图表
+  html += '<div class="row row-3">';
+  html += '<div class="card"><h3>📊 三区分布趋势 (近30期)</h3><canvas id="zoneChart"></canvas></div>';
+  html += '<div class="card"><h3>🔵 蓝球频次图</h3><canvas id="blueChart"></canvas></div>';
+  html += '<div class="card"><h3>🔥 红球热号 Top 10</h3><canvas id="redRankChart"></canvas></div>';
+  html += '</div>';
+
+  // Row 3: 推荐 + 复盘
+  html += '<div class="row row-2">';
+  html += '<div class="card"><h3>🎯 本期选号推荐</h3>';
+  if (data.latestPrediction && data.latestPrediction.groups) {
+    for (const g of data.latestPrediction.groups) {
+      html += '<div class="pred-group"><h4>' + g.name + '</h4>';
+      html += '<div><span style="color:var(--red);font-weight:bold;">红球: </span>' + g.reds.map(n => '<span class="ball red small">' + pad(n) + '</span>').join('') + '</div>';
+      html += '<div style="margin-top:6px;"><span style="color:var(--blue);font-weight:bold;">蓝球: </span>' + g.blues.map(n => '<span class="ball blue small">' + pad(n) + '</span>').join('') + '</div>';
+      html += '<div class="pred-detail">📐 ' + g.distribution + '  |  🔗 ' + ((g.consecutivePairs||[]).map(p=>pad(p[0])+'-'+pad(p[1])).join(', ')||'--') + '  |  🌡 H' + g.hotCount + '-W' + g.warmCount + '-C' + g.coldCount + '</div>';
+      html += '</div>';
+    }
+  } else { html += '<div style="text-align:center;color:var(--text-2);padding:20px;">暂无推荐数据</div>'; }
+  html += '</div>';
+
+  html += '<div class="card"><h3>📋 上期复盘</h3>';
+  if (data.review) {
+    const r = data.review;
+    html += '<div style="margin-bottom:8px;font-size:.85em;color:var(--text-2);">预测 ' + r.predictedForIssue + ' → 实际 ' + r.actualIssue + '</div>';
+    html += '<div style="font-size:.85em;margin-bottom:4px;color:var(--text-2);">实际开奖:</div>';
+    html += '<div style="margin-bottom:10px;">' + r.actualReds.map(n => '<span class="ball red small">' + pad(n) + '</span>').join('') + '<span class="ball blue small">' + pad(r.actualBlue) + '</span></div>';
+    const pct = Math.round(r.bestRedHits / 7 * 100);
+    html += '<div style="font-weight:bold;margin-bottom:6px;">红球命中率:</div>';
+    html += '<div class="review-bar"><span style="font-size:.8em;">最佳 ' + r.bestRedHits + '/7</span><div class="bar-bg"><div class="bar-fill ' + (pct >= 40 ? 'good' : pct >= 20 ? 'ok' : 'bad') + '" style="width:' + pct + '%"></div></div><span style="font-size:.8em;font-weight:bold;">' + pct + '%</span></div>';
+    html += '<div style="font-weight:bold;margin-top:10px;">蓝球: <span style="color:' + (r.bestBlueHit ? '#22c55e' : '#ef4444') + ';">' + (r.bestBlueHit ? '✅ 命中' : '❌ 未中') + '</span></div>';
+    if (r.redHits) {
+      for (const g of r.redHits) {
+        html += '<div style="font-size:.8em;margin-top:4px;color:var(--text-2);">' + g.name + ': 红 ' + g.hitCount + '/7' + (g.hits.length ? ' (' + g.hits.map(n => pad(n)).join(',') + ')' : '') + '</div>';
+      }
+    }
+  } else { html += '<div style="text-align:center;color:var(--text-2);padding:20px;">暂无复盘数据<br><small>首次运行或缺少对比数据</small></div>'; }
+  html += '</div>';
+  html += '</div>';
+
+  // Row 4: 红球热力图 + 各区详情
+  html += '<div class="row row-2-1">';
+  html += '<div class="card"><h3>🔴 红球频次热力图 (全 33 码)</h3>';
+  html += '<div style="text-align:center;line-height:2;">';
+  html += '<div style="margin-bottom:2px;font-size:.78em;color:var(--text-2);">一区 (01-10)</div>';
+  for (let n = 1; n <= 10; n++) {
+    const cnt = data.redFrequency[String(n)] || 0;
+    html += '<span class="heat-cell ' + heatClass(cnt) + '">' + pad(n) + '<small>' + cnt + '</small></span>';
+  }
+  html += '<div style="margin:8px 0 2px;font-size:.78em;color:var(--text-2);">二区 (11-20)</div>';
+  for (let n = 11; n <= 20; n++) {
+    const cnt = data.redFrequency[String(n)] || 0;
+    html += '<span class="heat-cell ' + heatClass(cnt) + '">' + pad(n) + '<small>' + cnt + '</small></span>';
+  }
+  html += '<div style="margin:8px 0 2px;font-size:.78em;color:var(--text-2);">三区 (21-33)</div>';
+  for (let n = 21; n <= 33; n++) {
+    const cnt = data.redFrequency[String(n)] || 0;
+    html += '<span class="heat-cell ' + heatClass(cnt) + '">' + pad(n) + '<small>' + cnt + '</small></span>';
+  }
+  html += '</div>';
+  html += '<div class="legend-row">';
+  html += '<span class="heat-cell heat-5">5+</span> 6+次&nbsp; <span class="heat-cell heat-4">4</span> 4-5次&nbsp; <span class="heat-cell heat-3">3</span> 3次&nbsp; <span class="heat-cell heat-2">2</span> 2次&nbsp; <span class="heat-cell heat-1">1</span> 1次&nbsp; <span class="heat-cell heat-0">0</span> 0次';
+  html += '</div>';
+  html += '</div>';
+
+  html += '<div class="card"><h3>📍 各区冷热详情</h3>';
+  for (const [zk, zs] of Object.entries(data.zoneStats)) {
+    html += '<div style="margin-bottom:8px;"><b style="font-size:.88em;">' + zs.name + '</b>';
+    if (zs.hot && zs.hot.length) html += '<div style="font-size:.8em;margin:2px 0;">🔥 热号: ' + zs.hot.join(' ') + '</div>';
+    if (zs.warm && zs.warm.length) html += '<div style="font-size:.8em;margin:2px 0;">● 温号: ' + zs.warm.join(' ') + '</div>';
+    if (zs.cold && zs.cold.length) html += '<div style="font-size:.8em;margin:2px 0;">❄ 冷号: ' + zs.cold.join(' ') + '</div>';
+    if (zs.ice && zs.ice.length) html += '<div style="font-size:.8em;margin:2px 0;">🧊 冰号: ' + zs.ice.join(' ') + '</div>';
+    html += '<hr style="border-color:var(--border);margin:8px 0;"></div>';
+  }
+  html += '</div>';
+  html += '</div>';
+
+  // Row 5: 近期开奖记录表格
+  html += '<div class="card"><h3>📜 近期开奖记录 (最近 20 期)</h3><div class="table-wrap">';
+  html += '<table><thead><tr>';
+  html += '<th>期号</th><th>日期</th><th>红球</th><th>蓝球</th><th>一区</th><th>二区</th><th>三区</th><th>连号</th><th>全覆</th>';
+  html += '</tr></thead><tbody id="drawTableBody"></tbody></table></div></div>';
+
+  document.getElementById('app').innerHTML = html;
+  renderDrawTable(data);
+  renderCharts(data);
+}
+
+function renderDrawTable(data) {
+  const consMap = {};
+  for (const c of (data.consecutiveTrend || [])) consMap[c.code] = c;
+  const rowData = (data.zoneDistribution || []).slice(0, 20);
+  let rows = '';
+  for (const d of rowData) {
+    const cons = consMap[d.code];
+    const consStr = cons && cons.count > 0 ? cons.pairs.join(',') : '--';
+    const fullIcon = d.full ? '✅' : '⚠️';
+    const redBalls = (d.reds || []).map(n => '<span class="ball red small">' + pad(n) + '</span>').join('');
+    const blueBall = d.blue != null ? '<span class="ball blue small">' + pad(d.blue) + '</span>' : '--';
+    rows += '<tr>';
+    rows += '<td><b>' + d.code + '</b></td>';
+    rows += '<td style="font-size:.78em;">' + d.date + '</td>';
+    rows += '<td style="white-space:nowrap;">' + (redBalls || '--') + '</td>';
+    rows += '<td>' + blueBall + '</td>';
+    rows += '<td>' + d.Z1 + '</td>';
+    rows += '<td>' + d.Z2 + '</td>';
+    rows += '<td>' + d.Z3 + '</td>';
+    rows += '<td style="font-size:.78em;">' + consStr + '</td>';
+    rows += '<td>' + fullIcon + '</td>';
+    rows += '</tr>';
+  }
+  const tbody = document.getElementById('drawTableBody');
+  if (tbody) tbody.innerHTML = rows;
+}
+
+function renderCharts(data) {
+  const color2 = getComputedStyle(document.documentElement).getPropertyValue('--text-2').trim();
+  Chart.defaults.color = color2;
+  Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif";
+  window.__charts = window.__charts || [];
+
+  const zoneCtx = document.getElementById('zoneChart');
+  if (zoneCtx) {
+    const zoneData = data.zoneDistribution.slice(0, 20).reverse();
+    window.__charts.push(new Chart(zoneCtx, {
+      type: 'bar',
+      data: {
+        labels: zoneData.map(d => d.code.slice(-3)),
+        datasets: [
+          { label: '一区(01-10)', data: zoneData.map(d => d.Z1), backgroundColor: '#dc2626', borderRadius: 2 },
+          { label: '二区(11-20)', data: zoneData.map(d => d.Z2), backgroundColor: '#f59e0b', borderRadius: 2 },
+          { label: '三区(21-33)', data: zoneData.map(d => d.Z3), backgroundColor: '#1d4ed8', borderRadius: 2 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, max: 7 } },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10, font: { size: 10 } } } }
+      }
+    }));
+  }
+
+  const blueCtx = document.getElementById('blueChart');
+  if (blueCtx) {
+    const blueLabels = [], blueValues = [], blueColors = [];
+    for (let n = 1; n <= 16; n++) {
+      const cnt = data.blueFrequency[String(n)] || 0;
+      blueLabels.push(pad(n));
+      blueValues.push(cnt);
+      blueColors.push(cnt >= 3 ? '#dc2626' : cnt >= 2 ? '#f59e0b' : cnt >= 1 ? '#1d4ed8' : 'rgba(148,163,184,.35)');
+    }
+    window.__charts.push(new Chart(blueCtx, {
+      type: 'bar',
+      data: { labels: blueLabels, datasets: [{ data: blueValues, backgroundColor: blueColors, borderRadius: 5 }] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
+    }));
+  }
+
+  const redCtx = document.getElementById('redRankChart');
+  if (redCtx) {
+    const top10 = data.redRanking.slice(0, 10);
+    const rColors = top10.map(r => r.label === 'HOT' ? '#ef4444' : r.label === 'WARM' ? '#f59e0b' : '#1d4ed8');
+    window.__charts.push(new Chart(redCtx, {
+      type: 'bar',
+      data: { labels: top10.map(r => r.num), datasets: [{ data: top10.map(r => r.count), backgroundColor: rColors, borderRadius: 5 }] },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, ticks: { stepSize: 2 } } }, plugins: { legend: { display: false } } }
+    }));
+  }
+}
+
+initTheme();
+render().catch(e => { document.getElementById('app').innerHTML = '<div class="error-box">❌ 渲染失败: ' + e.message + '</div>'; console.error(e); });
+</script>
+</body>
+</html>

@@ -6,12 +6,13 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const common = require(path.join(__dirname, '..', '..', 'scripts', 'lottery-common.js'));
 
 const ROOT = path.resolve(__dirname, '..');
 const CONFIG_PATH = path.join(ROOT, 'config.json');
 const DASHBOARD_DATA_PATH = path.join(ROOT, 'data', 'dashboard_data.json');
 const ERROR_LOG_PATH = path.join(ROOT, 'data', 'error.log');
+const LAST_RUN_PATH = path.join(ROOT, 'data', 'last_run.json');
 
 function pad(n, len) { return String(n).padStart(len || 2, '0'); }
 
@@ -63,27 +64,29 @@ function buildMessageContent(data) {
     return lines.join('\n');
 }
 
-function sendFeishu(webhook, message) {
-    const body = JSON.stringify({ msg_type: 'text', content: { text: message } });
-    const tmpFile = path.join(ROOT, 'data', '_feishu_payload.json');
-    fs.writeFileSync(tmpFile, body, 'utf8');
-    try {
-        const result = execSync('curl -s -X POST -H "Content-Type: application/json" -d @' + tmpFile + ' "' + webhook + '"', { encoding: 'utf8', maxBuffer: 1024 * 1024 });
-        const parsed = JSON.parse(result);
-        if (parsed.code !== 0) throw new Error('飞书返回错误: [' + parsed.code + '] ' + parsed.msg);
-    } finally {
-        try { fs.unlinkSync(tmpFile); } catch (_) {}
+async function sendFeishu(webhook, message) {
+    const result = await common.postJson(webhook, { msg_type: 'text', content: { text: message } });
+    if (result && typeof result === 'object' && result.code !== undefined && result.code !== 0) {
+        throw new Error('飞书返回错误: [' + result.code + '] ' + result.msg);
     }
 }
 
-function sendWecom(webhook, message) {
-    const body = JSON.stringify({ msgtype: 'markdown', markdown: { content: message } });
-    execSync('curl -s -X POST -H "Content-Type: application/json" -d \'' + body.replace(/'/g, "'\\''") + '\' "' + webhook + '"', { encoding: 'utf8', maxBuffer: 1024 * 1024 });
+async function sendWecom(webhook, message) {
+    await common.postJson(webhook, { msgtype: 'markdown', markdown: { content: message } });
 }
 
-function main() {
+// ====== 参数解析 ======
+// 用法:
+//   node send_notify.js [通道名] [--only-when-new] [--dry-run]
+//   通道名: feishu / wecom / dingtalk（默认推送所有启用通道）
+//   --only-when-new: 仅当最近一次分析有新数据时推送（读取 last_run.json，避免重复推送）
+//   --dry-run: 只构建消息不发送（用于测试）
+async function main() {
     const args = process.argv.slice(2);
-    const forceChannel = args[0] || null;
+    const forceChannel = args.find(a => !a.startsWith('--')) || null;
+    const onlyWhenNew = args.includes('--only-when-new');
+    const dryRun = args.includes('--dry-run');
+
     const config = loadConfig();
     const data = loadDashboardData();
 
@@ -92,19 +95,43 @@ function main() {
         return;
     }
 
+    // 无新数据时跳过推送（避免重复推送旧报告）
+    if (onlyWhenNew) {
+        const lastRun = common.loadJson(LAST_RUN_PATH, null);
+        if (!lastRun) {
+            console.log('ℹ 未找到 last_run.json，按 --only-when-new 跳过推送');
+            return;
+        }
+        if (!lastRun.updated) {
+            console.log('ℹ 最近一次分析无更新 (updated=false)，跳过推送（--only-when-new）');
+            return;
+        }
+    }
+
     const message = buildMessageContent(data);
+    if (dryRun) {
+        console.log('🧪 --dry-run 模式：以下消息将发送（未实际推送）');
+        console.log('-'.repeat(60));
+        console.log(message);
+        console.log('-'.repeat(60));
+        return;
+    }
+
     const results = [];
 
     for (const channel of config.notifications.channels) {
         if (!channel.enabled && !forceChannel) continue;
         if (forceChannel && channel.type !== forceChannel) continue;
-        if (!channel.webhook) { console.log('⚠ ' + channel.name + ': webhook URL 未配置'); continue; }
+        if (!channel.webhook) {
+            console.log('⚠ ' + channel.name + ': webhook URL 未配置，跳过');
+            continue;
+        }
 
         try {
             console.log('📤 正在发送通知到 ' + channel.name + '...');
             switch (channel.type) {
-                case 'feishu': sendFeishu(channel.webhook, message); break;
-                case 'wecom': sendWecom(channel.webhook, message); break;
+                case 'feishu': await sendFeishu(channel.webhook, message); break;
+                case 'wecom': await sendWecom(channel.webhook, message); break;
                 default: console.log('⚠ 未知类型: ' + channel.type); continue;
             }
             console.log('✅ ' + channel.name + ' 发送成功');
@@ -119,4 +146,7 @@ function main() {
     console.log('\n📊 通知推送完成: ' + successCount + '/' + results.length + ' 成功');
 }
 
-main();
+main().catch(e => {
+    console.error('❌ 通知脚本执行异常: ' + e.message);
+    process.exit(1);
+});

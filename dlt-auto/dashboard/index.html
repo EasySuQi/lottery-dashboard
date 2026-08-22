@@ -3,62 +3,125 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🟠🔵 超级大乐透分区冷热分析仪表盘</title>
+<title>🟠🔵 超级大乐透 · 分区冷热分析仪表盘</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  :root { --bg: #f5f5f5; --card-bg: #ffffff; --text: #333333; --orange: #E65100; --blue: #1565C0; --gold: #D4A843; --hot: #e74c3c; --warm: #f39c12; --cold: #3498db; --ice: #95a5a6; --border: #e0e0e0; --shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  /* ===== 设计变量（明/暗双主题） ===== */
+  :root {
+    --bg: #f1f5f9; --card-bg: #ffffff; --text: #1e293b; --text-2: #64748b;
+    --orange: #ea580c; --orange-2: #9a3412; --blue: #1d4ed8; --blue-2: #1e3a8a;
+    --gold: #b45309; --hot: #ef4444; --warm: #f59e0b; --cold: #3b82f6; --ice: #94a3b8;
+    --border: #e2e8f0; --shadow: 0 1px 3px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.08);
+    --card-hover: 0 4px 8px rgba(15,23,42,.08), 0 10px 28px rgba(15,23,42,.14);
+    --header-grad: linear-gradient(135deg, #ea580c 0%, #c2410c 45%, #7c2d12 100%);
+    --soft: #fff7ed; --soft-border: #fed7aa; --table-head: #f8fafc; --row-hover: #fff7ed;
+    --tag-hot-bg: #fee2e2; --tag-warm-bg: #fef3c7; --tag-cold-bg: #dbeafe; --tag-ice-bg: #f1f5f9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f172a; --card-bg: #1e293b; --text: #e2e8f0; --text-2: #94a3b8;
+      --orange: #fb923c; --orange-2: #fdba74; --blue: #60a5fa; --blue-2: #93c5fd;
+      --gold: #fbbf24; --hot: #f87171; --warm: #fbbf24; --cold: #60a5fa; --ice: #64748b;
+      --border: #334155; --shadow: 0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.35);
+      --card-hover: 0 4px 8px rgba(0,0,0,.5), 0 10px 28px rgba(0,0,0,.5);
+      --header-grad: linear-gradient(135deg, #9a3412 0%, #7c2d12 45%, #431407 100%);
+      --soft: #3a2414; --soft-border: #7c2d12; --table-head: #1e293b; --row-hover: #2a1f17;
+      --tag-hot-bg: #4c1d1d; --tag-warm-bg: #4a3410; --tag-cold-bg: #172554; --tag-ice-bg: #1e293b;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f172a; --card-bg: #1e293b; --text: #e2e8f0; --text-2: #94a3b8;
+    --orange: #fb923c; --orange-2: #fdba74; --blue: #60a5fa; --blue-2: #93c5fd;
+    --gold: #fbbf24; --hot: #f87171; --warm: #fbbf24; --cold: #60a5fa; --ice: #64748b;
+    --border: #334155; --shadow: 0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.35);
+    --card-hover: 0 4px 8px rgba(0,0,0,.5), 0 10px 28px rgba(0,0,0,.5);
+    --header-grad: linear-gradient(135deg, #9a3412 0%, #7c2d12 45%, #431407 100%);
+    --soft: #3a2414; --soft-border: #7c2d12; --table-head: #1e293b; --row-hover: #2a1f17;
+    --tag-hot-bg: #4c1d1d; --tag-warm-bg: #4a3410; --tag-cold-bg: #172554; --tag-ice-bg: #1e293b;
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); }
-  .header { background: linear-gradient(135deg, var(--orange), #bf360c); color: #fff; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-  .header h1 { font-size: 1.5em; }
-  .header .meta { font-size: 0.85em; opacity: 0.85; }
-  .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); transition: background .3s, color .3s; min-height: 100vh; }
+
+  /* ===== 头部 ===== */
+  .header { background: var(--header-grad); color: #fff; padding: 22px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
+  .header h1 { font-size: 1.45em; letter-spacing: .5px; display: flex; align-items: center; gap: 8px; }
+  .header .meta { font-size: .85em; opacity: .92; margin-top: 4px; }
+  .header-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .header-right .latest { text-align: right; font-size: .85em; line-height: 1.5; }
+  .theme-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.14); color: #fff; font-size: 1.05em; cursor: pointer; transition: transform .2s, background .2s; }
+  .theme-btn:hover { transform: scale(1.08); background: rgba(255,255,255,.25); }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 22px; }
   .row { display: grid; gap: 16px; margin-bottom: 16px; }
   .row-4 { grid-template-columns: repeat(4, 1fr); }
   .row-3 { grid-template-columns: 2fr 1fr 1fr; }
   .row-2 { grid-template-columns: 1fr 1fr; }
   .row-2-1 { grid-template-columns: 2fr 1fr; }
-  @media (max-width: 1000px) { .row-4, .row-3, .row-2, .row-2-1 { grid-template-columns: 1fr; } }
-  .card { background: var(--card-bg); border-radius: 8px; padding: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); }
-  .card h3 { font-size: 0.95em; margin-bottom: 12px; color: #555; border-bottom: 2px solid var(--orange); padding-bottom: 6px; display: flex; align-items: center; gap: 6px; }
-  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .stat-item { text-align: center; padding: 10px; background: #fafafa; border-radius: 6px; }
-  .stat-value { font-size: 1.6em; font-weight: bold; }
+  @media (max-width: 1080px) { .row-4, .row-3, .row-2, .row-2-1 { grid-template-columns: 1fr; } }
+
+  /* ===== 卡片 ===== */
+  .card { background: var(--card-bg); border-radius: 12px; padding: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); transition: box-shadow .25s, transform .25s, background .3s; }
+  .card:hover { box-shadow: var(--card-hover); }
+  .card h3 { font-size: .95em; margin-bottom: 14px; color: var(--text); border-bottom: 2px solid var(--orange); padding-bottom: 8px; display: flex; align-items: center; gap: 7px; font-weight: 600; }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-item { text-align: center; padding: 12px 8px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border); }
+  .stat-value { font-size: 1.7em; font-weight: 800; letter-spacing: .5px; }
   .stat-value.orange { color: var(--orange); }
   .stat-value.blue { color: var(--blue); }
-  .stat-value.gold { color: #b8860b; }
-  .stat-label { font-size: 0.8em; color: #888; margin-top: 2px; }
-  .ball { display: inline-block; width: 34px; height: 34px; line-height: 34px; text-align: center; border-radius: 50%; font-weight: bold; font-size: 0.9em; margin: 2px; color: #fff; }
-  .ball.front { background: var(--orange); }
-  .ball.back { background: var(--blue); }
-  .ball.small { width: 28px; height: 28px; line-height: 28px; font-size: 0.75em; }
-  .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 0.75em; font-weight: bold; margin-left: 3px; color: #fff; }
-  .tag.hot { background: var(--hot); }
-  .tag.warm { background: var(--warm); }
-  .tag.cold { background: var(--cold); }
-  .tag.ice { background: var(--ice); }
-  .pred-group { background: #fff3e0; border: 1px solid #ffe0b2; border-radius: 6px; padding: 12px; margin-bottom: 10px; }
-  .pred-group h4 { color: var(--orange); margin-bottom: 6px; font-size: 0.9em; }
-  .pred-detail { font-size: 0.82em; color: #777; margin-top: 6px; }
-  .review-bar { margin: 6px 0; display: flex; align-items: center; gap: 6px; }
-  .review-bar .bar-bg { flex: 1; height: 18px; background: #eee; border-radius: 9px; overflow: hidden; }
-  .review-bar .bar-fill { height: 100%; border-radius: 9px; transition: width 0.5s; }
-  .review-bar .bar-fill.good { background: #4caf50; }
-  .review-bar .bar-fill.ok { background: var(--warm); }
-  .review-bar .bar-fill.bad { background: #e74c3c; }
-  .heat-cell { display: inline-block; width: 34px; height: 34px; line-height: 34px; text-align: center; margin: 2px; border-radius: 4px; color: #fff; font-weight: bold; font-size: 0.78em; }
-  .heat-0 { background: #e8e8e8; color: #999; }
-  .heat-1 { background: #bbdefb; color: #1565c0; }
-  .heat-2 { background: #64b5f6; color: #fff; }
-  .heat-3 { background: #ff9800; color: #fff; }
-  .heat-4 { background: #f44336; color: #fff; }
-  .heat-5 { background: #b71c1c; color: #fff; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
-  th { background: #f8f8f8; padding: 8px 6px; text-align: center; font-weight: 600; border-bottom: 2px solid var(--border); }
-  td { padding: 6px; text-align: center; border-bottom: 1px solid #f0f0f0; }
-  tr:hover td { background: #fff3e0; }
+  .stat-value.gold { color: var(--gold); }
+  .stat-label { font-size: .78em; color: var(--text-2); margin-top: 3px; }
+
+  /* ===== 号码球 ===== */
+  .ball { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; font-weight: 700; font-size: .92em; margin: 2px; color: #fff; box-shadow: inset 0 -2px 4px rgba(0,0,0,.25), 0 1px 3px rgba(0,0,0,.2); }
+  .ball.front { background: linear-gradient(145deg, #f97316, #c2410c); }
+  .ball.back { background: linear-gradient(145deg, #3b82f6, #1d4ed8); }
+  .ball.small { width: 30px; height: 30px; font-size: .78em; }
+
+  /* ===== 标签 ===== */
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 20px; font-size: .72em; font-weight: 700; margin-left: 4px; }
+  .tag.hot { background: var(--tag-hot-bg); color: var(--hot); }
+  .tag.warm { background: var(--tag-warm-bg); color: #b45309; }
+  .tag.cold { background: var(--tag-cold-bg); color: var(--blue); }
+  .tag.ice { background: var(--tag-ice-bg); color: var(--text-2); }
+  :root[data-theme="dark"] .tag.warm { color: var(--warm); }
+
+  /* ===== 推荐组 ===== */
+  .pred-group { background: var(--soft); border: 1px solid var(--soft-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .pred-group h4 { color: var(--orange); margin-bottom: 8px; font-size: .92em; }
+  .pred-detail { font-size: .82em; color: var(--text-2); margin-top: 7px; }
+
+  /* ===== 复盘进度条 ===== */
+  .review-bar { margin: 6px 0; display: flex; align-items: center; gap: 8px; }
+  .review-bar .bar-bg { flex: 1; height: 18px; background: var(--bg); border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+  .review-bar .bar-fill { height: 100%; border-radius: 9px; transition: width .6s ease; }
+  .review-bar .bar-fill.good { background: linear-gradient(90deg, #22c55e, #16a34a); }
+  .review-bar .bar-fill.ok { background: linear-gradient(90deg, #f59e0b, #d97706); }
+  .review-bar .bar-fill.bad { background: linear-gradient(90deg, #ef4444, #dc2626); }
+
+  /* ===== 热力格 ===== */
+  .heat-cell { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; margin: 2px; border-radius: 6px; color: #fff; font-weight: 700; font-size: .78em; }
+  .heat-0 { background: var(--tag-ice-bg); color: var(--text-2); }
+  .heat-1 { background: #93c5fd; color: #1e3a8a; }
+  .heat-2 { background: #3b82f6; color: #fff; }
+  .heat-3 { background: #f59e0b; color: #fff; }
+  .heat-4 { background: #ef4444; color: #fff; }
+  .heat-5 { background: #b91c1c; color: #fff; }
+
+  /* ===== 表格 ===== */
+  table { width: 100%; border-collapse: collapse; font-size: .82em; }
+  th { background: var(--table-head); padding: 9px 6px; text-align: center; font-weight: 600; border-bottom: 2px solid var(--border); white-space: nowrap; }
+  td { padding: 7px 6px; text-align: center; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: var(--row-hover); }
+  .table-wrap { overflow-x: auto; }
+
   canvas { max-height: 280px; }
-  .footer { text-align: center; padding: 20px; color: #999; font-size: 0.8em; }
+
+  .footer { text-align: center; padding: 22px; color: var(--text-2); font-size: .8em; line-height: 1.8; border-top: 1px solid var(--border); margin-top: 8px; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: .72em; font-weight: 700; background: rgba(255,255,255,.18); margin-left: 8px; vertical-align: middle; }
+  .loading { text-align: center; padding: 70px; color: var(--text-2); }
+  .error-box { text-align: center; padding: 60px; color: #ef4444; }
 </style>
 </head>
 <body>
@@ -68,11 +131,14 @@
     <h1>🟠🔵 超级大乐透 分区冷热分析仪表盘</h1>
     <div class="meta" id="headerMeta">加载中...</div>
   </div>
-  <div style="text-align:right;font-size:0.85em;" id="headerRight"></div>
+  <div class="header-right">
+    <div class="latest" id="headerRight"></div>
+    <button class="theme-btn" id="themeToggle" title="切换深色/浅色模式">🌙</button>
+  </div>
 </div>
 
 <div class="container" id="app">
-  <div style="text-align:center;padding:60px;color:#999;">⏳ 正在加载数据...</div>
+  <div class="loading">⏳ 正在加载数据...</div>
 </div>
 
 <div class="footer">
@@ -81,18 +147,45 @@
 </div>
 
 <script>
-const DATA_URL = '../data/dashboard_data.json';
+// ====== 内嵌数据（standalone 版由生成脚本注入；在线版为 null） ======
+window.INLINE_DATA = (typeof __DASHBOARD_DATA__ !== 'undefined') ? __DASHBOARD_DATA__ : null;
 
 async function loadData() {
+  if (window.INLINE_DATA) return window.INLINE_DATA;
   try {
-    const resp = await fetch(DATA_URL);
+    const resp = await fetch('../data/dashboard_data.json');
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     return await resp.json();
   } catch(e) {
-    if (typeof INLINE_DATA !== 'undefined') return INLINE_DATA;
     console.error('数据加载失败:', e);
     return null;
   }
+}
+
+// ====== 深色/浅色模式 ======
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  try { localStorage.setItem('dlt-theme', theme); } catch(_) {}
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  const c = getComputedStyle(document.documentElement).getPropertyValue('--text-2').trim();
+  if (typeof Chart !== 'undefined') { Chart.defaults.color = c; }
+}
+
+function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem('dlt-theme'); } catch(_) {}
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved || (prefersDark ? 'dark' : 'light'));
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.addEventListener('click', () => {
+    const cur = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(cur);
+    // 已有图表时重建，以应用新配色
+    if (window.__charts && window.__charts.length) { window.__charts.forEach(c => c.destroy()); window.__charts = []; }
+    document.getElementById('app').innerHTML = '<div class="loading">⏳ 正在重新渲染...</div>';
+    render();
+  });
 }
 
 function pad(n, len) { return String(n).padStart(len || 2, '0'); }
@@ -105,20 +198,21 @@ function heatClass(cnt) {
 async function render() {
   const data = await loadData();
   if (!data) {
-    document.getElementById('app').innerHTML = '<div style="text-align:center;padding:60px;color:#e74c3c;">❌ 数据加载失败，请确认已运行 fetch_and_analyze.js 生成数据</div>';
+    document.getElementById('app').innerHTML = '<div class="error-box">❌ 数据加载失败，请确认已运行 fetch_and_analyze.js 生成数据。<br><br>提示：若直接双击打开本文件，请改用同目录下的 <b>index_standalone.html</b>（内嵌数据版）。</div>';
     return;
   }
 
   document.getElementById('headerMeta').textContent =
     '📅 数据更新: ' + new Date(data.generatedAt).toLocaleString('zh-CN') + '  |  ' + data.dataRange.totalDraws + ' 期数据 (第 ' + data.dataRange.earliestIssue + ' ~ ' + data.dataRange.latestIssue + ' 期)';
   document.getElementById('headerRight').innerHTML =
-    '最新开奖: <b>第 ' + data.latestDraw.code + ' 期</b><br>' + data.latestDraw.date;
+    '最新开奖: <b>第 ' + data.latestDraw.code + ' 期</b><br>' + data.latestDraw.date +
+    (window.INLINE_DATA ? '<br><span class="badge">内嵌数据</span>' : '<br><span class="badge">在线加载</span>');
 
   let html = '';
 
   // Row 1: 最新开奖 + 统计
   html += '<div class="row row-4">';
-  html += '<div class="card"><h3>📅 最新开奖</h3><div style="text-align:center;font-weight:bold;">第 ' + data.latestDraw.code + ' 期</div><div style="text-align:center;">' + data.latestDraw.date + '</div><div style="text-align:center;margin:10px 0;">';
+  html += '<div class="card"><h3>📅 最新开奖</h3><div style="text-align:center;font-weight:bold;">第 ' + data.latestDraw.code + ' 期</div><div style="text-align:center;color:var(--text-2);font-size:.85em;">' + data.latestDraw.date + '</div><div style="text-align:center;margin:12px 0;">';
   html += data.latestDraw.front.map(n => '<span class="ball front">' + pad(n) + '</span>').join('');
   html += '  ';
   html += data.latestDraw.back.map(n => '<span class="ball back">' + pad(n) + '</span>').join('');
@@ -127,16 +221,16 @@ async function render() {
   html += '<div class="card"><h3>📊 统计摘要</h3><div class="stat-grid">';
   html += '<div class="stat-item"><div class="stat-value orange">' + data.dataRange.totalDraws + '</div><div class="stat-label">总期数</div></div>';
   html += '<div class="stat-item"><div class="stat-value blue">' + Object.values(data.frontFrequency).filter(c => c >= 4).length + '</div><div class="stat-label">🔥 前区热号 (>=4次)</div></div>';
-  html += '<div class="stat-item"><div class="stat-value" style="color:#f39c12;">' + Object.values(data.backFrequency).filter(c => c >= 4).length + '</div><div class="stat-label">🔥 后区热号 (>=4次)</div></div>';
+  html += '<div class="stat-item"><div class="stat-value" style="color:var(--warm);">' + Object.values(data.backFrequency).filter(c => c >= 4).length + '</div><div class="stat-label">🔥 后区热号 (>=4次)</div></div>';
   html += '<div class="stat-item"><div class="stat-value gold">' + (data.fullCoverageRate * 100).toFixed(0) + '%</div><div class="stat-label">三区全覆盖率</div></div>';
   html += '</div></div>';
 
-  html += '<div class="card"><h3>🔗 连号率</h3><div style="text-align:center;padding:20px;"><div style="font-size:2em;font-weight:bold;color:' + (data.consecutiveRate >= 0.6 ? '#e74c3c' : '#f39c12') + ';">' + (data.consecutiveRate * 100).toFixed(0) + '%</div><div style="color:#888;font-size:0.85em;">近30期含连号比例</div></div></div>';
+  html += '<div class="card"><h3>🔗 连号率</h3><div style="text-align:center;padding:20px;"><div style="font-size:2em;font-weight:800;color:' + (data.consecutiveRate >= 0.6 ? 'var(--hot)' : 'var(--warm)') + ';">' + (data.consecutiveRate * 100).toFixed(0) + '%</div><div style="color:var(--text-2);font-size:.85em;">近30期含连号比例</div></div></div>';
 
   html += '<div class="card"><h3>🔵 后区热号 Top 6</h3><div style="text-align:center;">';
   for (let i = 0; i < Math.min(6, data.backRanking.length); i++) {
     const b = data.backRanking[i];
-    html += '<span class="ball back small">' + b.num + '</span><span class="tag ' + b.label.toLowerCase() + '">' + b.label + '</span><small style="color:#888;margin-right:6px;">' + b.count + '次</small>';
+    html += '<span class="ball back small">' + b.num + '</span><span class="tag ' + b.label.toLowerCase() + '">' + b.label + '</span><small style="color:var(--text-2);margin-right:6px;">' + b.count + '次</small>';
   }
   html += '</div></div>';
   html += '</div>';
@@ -154,53 +248,53 @@ async function render() {
   if (data.latestPrediction && data.latestPrediction.groups) {
     for (const g of data.latestPrediction.groups) {
       html += '<div class="pred-group"><h4>' + g.name + '</h4>';
-      html += '<div><span style="color:#E65100;font-weight:bold;">前区: </span>' + g.front.map(n => '<span class="ball front small">' + pad(n) + '</span>').join('') + '</div>';
-      html += '<div style="margin-top:4px;"><span style="color:#1565C0;font-weight:bold;">后区: </span>' + g.back.map(n => '<span class="ball back small">' + pad(n) + '</span>').join('') + '</div>';
+      html += '<div><span style="color:var(--orange);font-weight:bold;">前区: </span>' + g.front.map(n => '<span class="ball front small">' + pad(n) + '</span>').join('') + '</div>';
+      html += '<div style="margin-top:6px;"><span style="color:var(--blue);font-weight:bold;">后区: </span>' + g.back.map(n => '<span class="ball back small">' + pad(n) + '</span>').join('') + '</div>';
       html += '<div class="pred-detail">📐 ' + g.distribution + '  |  🔗 ' + ((g.consecutivePairs||[]).map(p=>pad(p[0])+'-'+pad(p[1])).join(', ')||'--') + '  |  🌡 H' + g.hotCount + '-W' + g.warmCount + '-C' + g.coldCount + '</div>';
       html += '</div>';
     }
-  } else { html += '<div style="text-align:center;color:#999;padding:20px;">暂无推荐数据</div>'; }
+  } else { html += '<div style="text-align:center;color:var(--text-2);padding:20px;">暂无推荐数据</div>'; }
   html += '</div>';
 
   html += '<div class="card"><h3>📋 上期复盘</h3>';
   if (data.review) {
     const r = data.review;
-    html += '<div style="margin-bottom:8px;font-size:0.85em;">预测 ' + r.predictedForIssue + ' → 实际 ' + r.actualIssue + '</div>';
-    html += '<div style="margin-bottom:8px;">' + r.actualFront.map(n => '<span class="ball front small">' + pad(n) + '</span>').join('') + '  ' + r.actualBack.map(n => '<span class="ball back small">' + pad(n) + '</span>').join('') + '</div>';
+    html += '<div style="margin-bottom:8px;font-size:.85em;color:var(--text-2);">预测 ' + r.predictedForIssue + ' → 实际 ' + r.actualIssue + '</div>';
+    html += '<div style="margin-bottom:10px;">' + r.actualFront.map(n => '<span class="ball front small">' + pad(n) + '</span>').join('') + '  ' + r.actualBack.map(n => '<span class="ball back small">' + pad(n) + '</span>').join('') + '</div>';
     const fpct = Math.round(r.bestFrontHits / 7 * 100);
-    html += '<div class="review-bar"><span style="font-size:0.8em;">前区 ' + r.bestFrontHits + '/7</span><div class="bar-bg"><div class="bar-fill ' + (fpct >= 40 ? 'good' : fpct >= 20 ? 'ok' : 'bad') + '" style="width:' + fpct + '%"></div></div><span style="font-size:0.8em;font-weight:bold;">' + fpct + '%</span></div>';
-    html += '<div style="margin-top:8px;">后区: <b>' + r.bestBackHits + '/3</b> 命中</div>';
-  } else { html += '<div style="text-align:center;color:#999;padding:20px;">暂无复盘数据</div>'; }
+    html += '<div class="review-bar"><span style="font-size:.8em;">前区 ' + r.bestFrontHits + '/7</span><div class="bar-bg"><div class="bar-fill ' + (fpct >= 40 ? 'good' : fpct >= 20 ? 'ok' : 'bad') + '" style="width:' + fpct + '%"></div></div><span style="font-size:.8em;font-weight:bold;">' + fpct + '%</span></div>';
+    html += '<div style="margin-top:10px;">后区: <b>' + r.bestBackHits + '/3</b> 命中</div>';
+  } else { html += '<div style="text-align:center;color:var(--text-2);padding:20px;">暂无复盘数据</div>'; }
   html += '</div>';
   html += '</div>';
 
   // Row 4: 前区热力图 + 各区详情
   html += '<div class="row row-2-1">';
   html += '<div class="card"><h3>🟠 前区频次热力图 (全 35 码)</h3>';
-  html += '<div style="text-align:center;line-height:2.2;">';
-  for (const [label, low, high] of [['一区 (01-12)', 1, 12], ['二区 (13-24)', 13, 24], ['三区 (25-35)', 25, 35]]) {
-    html += '<div style="margin:4px 0;font-size:0.78em;color:#888;">' + label + '</div>';
-    for (let n = low; n <= high; n++) {
-      const cnt = data.frontFrequency[String(n)] || 0;
-      html += '<span class="heat-cell ' + heatClass(cnt) + '">' + pad(n) + '<small>(' + cnt + ')</small></span>';
-    }
+  html += '<div style="text-align:center;">';
+  for (let n = 1; n <= 35; n++) {
+    const cnt = data.frontFrequency[String(n)] || 0;
+    html += '<span class="heat-cell ' + heatClass(cnt) + '" title="号码 ' + pad(n) + ' 出现 ' + cnt + ' 次">' + pad(n) + '</span>';
   }
   html += '</div></div>';
 
-  html += '<div class="card"><h3>📍 各区冷热详情</h3>';
-  for (const [zk, zs] of Object.entries(data.zoneStats)) {
-    html += '<div style="margin-bottom:10px;"><b>' + zs.name + '</b></div>';
-    if (zs.hot.length) html += '<div style="font-size:0.8em;margin:2px 0;">🔥 热号: ' + zs.hot.join(' ') + '</div>';
-    if (zs.warm.length) html += '<div style="font-size:0.8em;margin:2px 0;">● 温号: ' + zs.warm.join(' ') + '</div>';
-    if (zs.cold.length) html += '<div style="font-size:0.8em;margin:2px 0;">❄ 冷号: ' + zs.cold.join(' ') + '</div>';
-    if (zs.ice.length) html += '<div style="font-size:0.8em;margin:2px 0;">🧊 冰号: ' + zs.ice.join(' ') + '</div>';
-    html += '<hr style="border-color:#f0f0f0;margin:6px 0;">';
+  html += '<div class="card"><h3>🗂 三区冷热详情</h3>';
+  const zs = data.zoneStats || {};
+  const zNames = { Z1: '一区 (01-12)', Z2: '二区 (13-24)', Z3: '三区 (25-35)' };
+  for (const [k, name] of Object.entries(zNames)) {
+    const z = zs[k] || {};
+    html += '<div style="margin-bottom:8px;"><b style="font-size:.88em;">' + name + '</b>';
+    if (z.hot && z.hot.length) html += '<div style="font-size:.8em;margin:2px 0;">🔥 热号: ' + z.hot.join(' ') + '</div>';
+    if (z.warm && z.warm.length) html += '<div style="font-size:.8em;margin:2px 0;">● 温号: ' + z.warm.join(' ') + '</div>';
+    if (z.cold && z.cold.length) html += '<div style="font-size:.8em;margin:2px 0;">❄ 冷号: ' + z.cold.join(' ') + '</div>';
+    if (z.ice && z.ice.length) html += '<div style="font-size:.8em;margin:2px 0;">🧊 冰号: ' + z.ice.join(' ') + '</div>';
+    html += '<hr style="border-color:var(--border);margin:8px 0;"></div>';
   }
   html += '</div>';
   html += '</div>';
 
   // Row 5: 近期开奖记录表格
-  html += '<div class="card"><h3>📜 近期开奖记录 (最近 20 期)</h3><div style="overflow-x:auto;">';
+  html += '<div class="card"><h3>📜 近期开奖记录 (最近 20 期)</h3><div class="table-wrap">';
   html += '<table><thead><tr>';
   html += '<th>期号</th><th>日期</th><th>前区</th><th>后区</th><th>一区</th><th>二区</th><th>三区</th><th>连号</th><th>全覆</th>';
   html += '</tr></thead><tbody id="drawTableBody"></tbody></table></div></div>';
@@ -227,13 +321,13 @@ function renderDrawTable(data) {
 
     rows += '<tr>';
     rows += '<td><b>' + d.code + '</b></td>';
-    rows += '<td style="font-size:0.78em;">' + d.date + '</td>';
+    rows += '<td style="font-size:.78em;">' + d.date + '</td>';
     rows += '<td style="white-space:nowrap;">' + (frontBalls || '--') + '</td>';
     rows += '<td style="white-space:nowrap;">' + (backBalls || '--') + '</td>';
     rows += '<td>' + d.Z1 + '</td>';
     rows += '<td>' + d.Z2 + '</td>';
     rows += '<td>' + d.Z3 + '</td>';
-    rows += '<td style="font-size:0.78em;">' + consStr + '</td>';
+    rows += '<td style="font-size:.78em;">' + consStr + '</td>';
     rows += '<td>' + fullIcon + '</td>';
     rows += '</tr>';
   }
@@ -243,28 +337,30 @@ function renderDrawTable(data) {
 }
 
 function renderCharts(data) {
-  Chart.defaults.color = '#666';
+  const color2 = getComputedStyle(document.documentElement).getPropertyValue('--text-2').trim();
+  Chart.defaults.color = color2;
   Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Microsoft YaHei', sans-serif";
+  window.__charts = window.__charts || [];
 
   const zoneCtx = document.getElementById('zoneChart');
   if (zoneCtx) {
     const zoneData = data.zoneDistribution.slice(0, 20).reverse();
-    new Chart(zoneCtx, {
+    window.__charts.push(new Chart(zoneCtx, {
       type: 'bar',
       data: {
         labels: zoneData.map(d => d.code),
         datasets: [
-          { label: '一区(01-12)', data: zoneData.map(d => d.Z1), backgroundColor: '#E65100' },
-          { label: '二区(13-24)', data: zoneData.map(d => d.Z2), backgroundColor: '#f39c12' },
-          { label: '三区(25-35)', data: zoneData.map(d => d.Z3), backgroundColor: '#1565C0' }
+          { label: '一区(01-12)', data: zoneData.map(d => d.Z1), backgroundColor: '#ea580c', borderRadius: 2 },
+          { label: '二区(13-24)', data: zoneData.map(d => d.Z2), backgroundColor: '#f59e0b', borderRadius: 2 },
+          { label: '三区(25-35)', data: zoneData.map(d => d.Z3), backgroundColor: '#3b82f6', borderRadius: 2 }
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        scales: { x: { stacked: true }, y: { stacked: true, max: 7 } },
+        scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, max: 7 } },
         plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10, font: { size: 10 } } } }
       }
-    });
+    }));
   }
 
   const backCtx = document.getElementById('backChart');
@@ -274,28 +370,29 @@ function renderCharts(data) {
       const cnt = data.backFrequency[String(n)] || 0;
       labels.push(pad(n));
       values.push(cnt);
-      colors.push(cnt >= 4 ? '#E65100' : cnt >= 2 ? '#f39c12' : cnt >= 1 ? '#3498db' : '#bdc3c7');
+      colors.push(cnt >= 4 ? '#ea580c' : cnt >= 2 ? '#f59e0b' : cnt >= 1 ? '#3b82f6' : 'rgba(148,163,184,.35)');
     }
-    new Chart(backCtx, {
+    window.__charts.push(new Chart(backCtx, {
       type: 'bar',
-      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderRadius: 4 }] },
+      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderRadius: 5 }] },
       options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
-    });
+    }));
   }
 
   const frontCtx = document.getElementById('frontRankChart');
   if (frontCtx) {
     const top10 = data.frontRanking.slice(0, 10);
-    const rColors = top10.map(r => r.label === 'HOT' ? '#e74c3c' : r.label === 'WARM' ? '#f39c12' : '#3498db');
-    new Chart(frontCtx, {
+    const rColors = top10.map(r => r.label === 'HOT' ? '#ef4444' : r.label === 'WARM' ? '#f59e0b' : '#3b82f6');
+    window.__charts.push(new Chart(frontCtx, {
       type: 'bar',
-      data: { labels: top10.map(r => r.num), datasets: [{ data: top10.map(r => r.count), backgroundColor: rColors, borderRadius: 4 }] },
+      data: { labels: top10.map(r => r.num), datasets: [{ data: top10.map(r => r.count), backgroundColor: rColors, borderRadius: 5 }] },
       options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, ticks: { stepSize: 2 } } }, plugins: { legend: { display: false } } }
-    });
+    }));
   }
 }
 
-render().catch(e => { document.getElementById('app').innerHTML = '<div style="text-align:center;padding:60px;color:#e74c3c;">❌ 渲染失败: ' + e.message + '</div>'; console.error(e); });
+initTheme();
+render().catch(e => { document.getElementById('app').innerHTML = '<div class="error-box">❌ 渲染失败: ' + e.message + '</div>'; console.error(e); });
 </script>
 </body>
 </html>

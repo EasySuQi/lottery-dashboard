@@ -1,0 +1,97 @@
+{
+  "name": "text-compressor",
+  "displayName": "文本压缩工具",
+  "description": "快速文本压缩工具，支持去除空白、URL编解码、Base64、JSON压缩等10种操作，实时显示字数统计",
+  "version": "1.0.0",
+  "publisher": "aiworks",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Formatters"
+  ],
+  "keywords": [
+    "文本压缩",
+    "text compressor",
+    "base64",
+    "url encode",
+    "json minify",
+    "字数统计"
+  ],
+  "activationEvents": [
+    "onView:text-compressor.panel"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "text-compressor.openPanel",
+        "title": "打开文本压缩工具",
+        "icon": "$(collapse-all)"
+      },
+      {
+        "command": "text-compressor.compressFromSelection",
+        "title": "压缩选中文本",
+        "icon": "$(zap)"
+      },
+      {
+        "command": "text-compressor.clearAll",
+        "title": "清空压缩面板"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "text-compressor-sidebar",
+          "title": "文本压缩工具",
+          "icon": "$(collapse-all)"
+        }
+      ]
+    },
+    "views": {
+      "text-compressor-sidebar": [
+        {
+          "type": "webview",
+          "id": "text-compressor.panel",
+          "name": "压缩面板"
+        }
+      ]
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "text-compressor.compressFromSelection",
+          "group": "navigation",
+          "when": "editorHasSelection"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "text-compressor.clearAll",
+          "when": "false"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "text-compressor.openPanel",
+        "key": "ctrl+shift+c",
+        "mac": "cmd+shift+c",
+        "when": "editorTextFocus"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "tsc -p ./",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/vscode": "^1.125.0",
+    "typescript": "^5.9.3"
+  },
+  "type": "commonjs"
+}

@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "docx": "^9.7.1",
+    "fontkit": "^2.0.4",
+    "pdfkit": "^0.19.1"
+  }
+}

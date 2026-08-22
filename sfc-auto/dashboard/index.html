@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚽ 足彩14场胜负彩分析仪表盘</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --card-bg: #ffffff;
+    --text: #1e293b;
+    --text-2: #64748b;
+    --win: #2e7d32;
+    --draw: #e65100;
+    --lose: #c62828;
+    --gold: #D4A843;
+    --border: #e0e0e0;
+    --shadow: 0 1px 3px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.08);
+    --card-hover: 0 4px 8px rgba(15,23,42,.08), 0 10px 28px rgba(15,23,42,.14);
+    --header-grad: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+    --table-head: #f5f5f5;
+    --row-hover: #fafafa;
+    --soft-bg: #fafafa;
+    --soft-border: #e0e0e0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f172a; --card-bg: #1e293b; --text: #e2e8f0; --text-2: #94a3b8;
+      --win: #4ade80; --draw: #fb923c; --lose: #f87171; --gold: #fbbf24;
+      --border: #334155;
+      --shadow: 0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.35);
+      --card-hover: 0 4px 8px rgba(0,0,0,.5), 0 10px 28px rgba(0,0,0,.5);
+      --header-grad: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      --table-head: #1e293b; --row-hover: #243244; --soft-bg: #243244; --soft-border: #334155;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f172a; --card-bg: #1e293b; --text: #e2e8f0; --text-2: #94a3b8;
+    --win: #4ade80; --draw: #fb923c; --lose: #f87171; --gold: #fbbf24;
+    --border: #334155;
+    --shadow: 0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.35);
+    --card-hover: 0 4px 8px rgba(0,0,0,.5), 0 10px 28px rgba(0,0,0,.5);
+    --header-grad: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+    --table-head: #1e293b; --row-hover: #243244; --soft-bg: #243244; --soft-border: #334155;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); transition: background .3s, color .3s; min-height: 100vh; }
+  .header { background: var(--header-grad); color: #fff; padding: 22px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
+  .theme-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.14); color: #fff; font-size: 1.05em; cursor: pointer; transition: transform .2s, background .2s; }
+  .theme-btn:hover { transform: scale(1.08); background: rgba(255,255,255,.25); }
+  .header h1 { font-size: 1.5em; }
+  .header .meta { font-size: 0.85em; opacity: 0.85; }
+  .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+  .row { display: grid; gap: 16px; margin-bottom: 16px; }
+  .row-4 { grid-template-columns: repeat(4, 1fr); }
+  .row-3 { grid-template-columns: repeat(3, 1fr); }
+  .row-2 { grid-template-columns: 1fr 1fr; }
+  .row-2-1 { grid-template-columns: 2fr 1fr; }
+  .row-1-2 { grid-template-columns: 1fr 2fr; }
+  @media (max-width: 1200px) { .row-4, .row-3, .row-2, .row-2-1, .row-1-2 { grid-template-columns: 1fr; } }
+  .card { background: var(--card-bg); border-radius: 12px; padding: 18px; box-shadow: var(--shadow); border: 1px solid var(--border); transition: box-shadow .25s, background .3s; }
+  .card:hover { box-shadow: var(--card-hover); }
+  .card h3 { font-size: 0.95em; margin-bottom: 12px; color: #1a237e; border-bottom: 2px solid #1a237e; padding-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .card-full { grid-column: 1 / -1; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-item { text-align: center; padding: 10px; background: #fafafa; border-radius: 6px; }
+  .stat-value { font-size: 1.6em; font-weight: bold; }
+  .stat-value.win { color: var(--win); }
+  .stat-value.draw { color: var(--draw); }
+  .stat-value.lose { color: var(--lose); }
+  .stat-value.gold { color: #b8860b; }
+  .stat-value.navy { color: #1a237e; }
+  .stat-label { font-size: 0.75em; color: #888; margin-top: 2px; }
+  .difficulty-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 1em; }
+  .diff-1 { background: #e8f5e9; color: #2e7d32; }
+  .diff-2 { background: #fff8e1; color: #f57f17; }
+  .diff-3 { background: #fff3e0; color: #e65100; }
+  .diff-4 { background: #fce4ec; color: #c62828; }
+  .diff-5 { background: #f3e5f5; color: #6a1b9a; }
+
+  /* 赛果矩阵 */
+  .result-grid { display: grid; grid-template-columns: repeat(14, 1fr); gap: 3px; }
+  .result-cell { text-align: center; padding: 6px 2px; border-radius: 4px; font-weight: bold; font-size: 0.8em; }
+  .result-win { background: #c8e6c9; color: #1b5e20; }
+  .result-draw { background: #ffe0b2; color: #e65100; }
+  .result-lose { background: #ffcdd2; color: #b71c1c; }
+  .result-star { background: #e0e0e0; color: #616161; }
+
+  /* 比赛详情表 */
+  .match-table { width: 100%; border-collapse: collapse; font-size: 0.78em; }
+  .match-table th { background: #1a237e; color: #fff; padding: 8px 5px; text-align: center; font-weight: 600; white-space: nowrap; }
+  .match-table td { padding: 6px 5px; text-align: center; border-bottom: 1px solid #eee; }
+  .match-table tr:hover td { background: #f5f5ff; }
+  .match-table .league-tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 0.85em; background: #e8eaf6; color: #1a237e; white-space: nowrap; }
+
+  /* 位置热度 */
+  .heat-cell { display: inline-block; width: 42px; height: 42px; line-height: 42px; text-align: center; margin: 2px; border-radius: 4px; color: #fff; font-weight: bold; font-size: 0.85em; }
+  .heat-0 { background: #e8e8e8; color: #999; }
+  .heat-1 { background: #90caf9; color: #0d47a1; }
+  .heat-2 { background: #42a5f5; color: #fff; }
+  .heat-3 { background: #ff9800; color: #fff; }
+  .heat-4 { background: #ef5350; color: #fff; }
+  .risk-low { background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
+  .risk-medium { background: #fff3e0; color: #e65100; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
+  .risk-high { background: #fce4ec; color: #c62828; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
+  .risk-draw { background: #ffe0b2; color: #bf360c; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+  th { background: #f5f5f5; padding: 8px 6px; text-align: center; font-weight: 600; border-bottom: 2px solid var(--border); white-space: nowrap; }
+  td { padding: 6px; text-align: center; border-bottom: 1px solid #f0f0f0; }
+  tr:hover td { background: #fafafa; }
+
+  .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 0.75em; font-weight: bold; margin-left: 3px; color: #fff; }
+  .tag-hotpot { background: #ff9800; }
+  .tag-cold { background: #2196f3; }
+  .tag-zero { background: #f44336; }
+  .tag-normal { background: #4caf50; }
+
+  .footer { text-align: center; padding: 20px; color: #999; font-size: 0.8em; }
+
+  canvas { max-height: 300px; }
+
+  /* 联赛球队表 */
+  .tab-nav { display: flex; gap: 4px; margin-bottom: 10px; }
+  .tab-btn { padding: 6px 14px; border: 1px solid var(--border); background: #f5f5f5; cursor: pointer; border-radius: 4px 4px 0 0; font-size: 0.85em; }
+  .tab-btn.active { background: #1a237e; color: #fff; border-color: #1a237e; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .win-bar-container { display: flex; align-items: center; gap: 4px; }
+  .win-bar { height: 14px; border-radius: 7px; }
+  .win-bar-home { background: var(--win); }
+  .win-bar-draw { background: var(--draw); }
+  .win-bar-away { background: var(--lose); }
+
+  /* 对Period选择器 */
+  .period-selector { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .period-btn { padding: 4px 10px; border: 1px solid #ccc; background: #fff; cursor: pointer; border-radius: 4px; font-size: 0.8em; }
+  .period-btn.active { background: #1a237e; color: #fff; border-color: #1a237e; }
+
+  /* ===== 暗色模式覆盖 ===== */
+  :root[data-theme="dark"] .card h3 { color: #93c5fd; border-bottom-color: #1d4ed8; }
+  :root[data-theme="dark"] .stat-item { background: var(--soft-bg); border-color: var(--border); }
+  :root[data-theme="dark"] th { background: var(--table-head); }
+  :root[data-theme="dark"] td { border-bottom-color: var(--border); }
+  :root[data-theme="dark"] tr:hover td { background: var(--row-hover); }
+  :root[data-theme="dark"] .match-table th { background: #1e3a8a; }
+  :root[data-theme="dark"] .match-table td { border-bottom-color: var(--border); }
+  :root[data-theme="dark"] .match-table tr:hover td { background: var(--row-hover); }
+  :root[data-theme="dark"] .match-table .league-tag { background: #1e3a8a; color: #93c5fd; }
+  :root[data-theme="dark"] .result-win { background: #14532d; color: #86efac; }
+  :root[data-theme="dark"] .result-draw { background: #7c2d12; color: #fdba74; }
+  :root[data-theme="dark"] .result-lose { background: #7f1d1d; color: #fca5a5; }
+  :root[data-theme="dark"] .result-star { background: #334155; color: #cbd5e1; }
+  :root[data-theme="dark"] .diff-1 { background: #14532d; color: #86efac; }
+  :root[data-theme="dark"] .diff-2 { background: #4a3410; color: #fcd34d; }
+  :root[data-theme="dark"] .diff-3 { background: #7c2d12; color: #fdba74; }
+  :root[data-theme="dark"] .diff-4 { background: #7f1d1d; color: #fca5a5; }
+  :root[data-theme="dark"] .diff-5 { background: #4a1d4a; color: #d8b4fe; }
+  :root[data-theme="dark"] .risk-low { background: #14532d; color: #86efac; }
+  :root[data-theme="dark"] .risk-medium { background: #7c2d12; color: #fdba74; }
+  :root[data-theme="dark"] .risk-high { background: #7f1d1d; color: #fca5a5; }
+  :root[data-theme="dark"] .risk-draw { background: #7c2d12; color: #fdba74; }
+  :root[data-theme="dark"] .tab-btn { background: var(--soft-bg); border-color: var(--border); color: var(--text); }
+  :root[data-theme="dark"] .tab-btn.active { background: #1e3a8a; border-color: #1e3a8a; color: #fff; }
+  :root[data-theme="dark"] .period-btn { background: var(--card-bg); border-color: var(--border); color: var(--text); }
+  :root[data-theme="dark"] .period-btn.active { background: #1e3a8a; border-color: #1e3a8a; color: #fff; }
+  :root[data-theme="dark"] .heat-0 { background: #334155; color: #94a3b8; }
+  :root[data-theme="dark"] .heat-1 { background: #1e3a8a; color: #93c5fd; }
+  :root[data-theme="dark"] .heat-2 { background: #1d4ed8; color: #fff; }
+  :root[data-theme="dark"] .footer { border-top-color: var(--border); }
+  .loading-spin { text-align: center; padding: 60px; color: var(--text-2); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>⚽ 足彩14场胜负彩 分析仪表盘</h1>
+    <div class="meta" id="pageMeta">加载中...</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <div class="meta" id="updateTime"></div>
+    <button class="theme-btn" id="themeToggle" title="切换深色/浅色模式">🌙</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 未来期次提前评估（置顶） -->
+  <div class="card">
+    <h3>🔮 未来期次提前评估</h3>
+    <div class="period-selector" id="forecastSelector"></div>
+    <div id="forecastDetail"></div>
+  </div>
+
+  <!-- KPI 行 -->
+  <div class="row row-4" id="kpiRow"></div>
+
+  <!-- 难度评估 + 最新赛果 -->
+  <div class="row row-2-1">
+    <div class="card">
+      <h3>📋 最新一期 14场赛果矩阵 <span id="latestIssueTag" style="font-size:0.7em;font-weight:normal;color:#888;"></span></h3>
+      <div id="latestResultMatrix"></div>
+      <div id="latestMatchTable" style="margin-top:12px;"></div>
+    </div>
+    <div class="card">
+      <h3>⚖ 难度综合评估 <span id="diffIssueTag" style="font-size:0.7em;font-weight:normal;color:#888;"></span></h3>
+      <canvas id="difficultyChart"></canvas>
+      <div id="difficultyDetail" style="margin-top:10px; font-size:0.85em;"></div>
+    </div>
+  </div>
+
+  <!-- 胜平负趋势 + 位置热度 -->
+  <div class="row row-2">
+    <div class="card">
+      <h3>📈 胜平负分布趋势 (近20期)</h3>
+      <canvas id="distributionChart"></canvas>
+    </div>
+    <div class="card">
+      <h3>🔥 14位置热度矩阵</h3>
+      <div id="positionHeatTable"></div>
+    </div>
+  </div>
+
+  <!-- 奖金走势 -->
+  <div class="row row-2">
+    <div class="card">
+      <h3>💰 一等奖奖金 & 注数走势</h3>
+      <canvas id="prizeChart"></canvas>
+    </div>
+    <div class="card">
+      <h3>🏷 奖金类型分布</h3>
+      <canvas id="prizeTypeChart"></canvas>
+      <div id="prizeTypeSummary" style="margin-top:10px; font-size:0.85em;"></div>
+    </div>
+  </div>
+
+  <!-- 奖金详情表 -->
+  <div class="card">
+    <h3>📊 近20期奖金详情表</h3>
+    <div style="overflow-x:auto;" id="prizeDetailTable"></div>
+  </div>
+
+  <!-- 往期评估记录 -->
+  <div class="card">
+    <h3>🗂 往期评估记录</h3>
+    <div class="period-selector" id="historySelector"></div>
+    <div id="historyEvaluationDetail"></div>
+  </div>
+
+  <!-- 评估 vs 真实赛果比对 -->
+  <div class="card">
+    <h3>📊 评估 vs 真实赛果比对</h3>
+    <div id="comparisonSummary"></div>
+    <div class="period-selector" id="comparisonSelector"></div>
+    <div style="overflow-x:auto;" id="comparisonTable"></div>
+  </div>
+
+  <!-- 回溯分析总览 KPI -->
+  <div class="row row-4" id="backfillKpiRow"></div>
+
+  <!-- 回溯分析：难度走势 + 风险位置热度 -->
+  <div class="row row-2">
+    <div class="card">
+      <h3>📈 难度走势（回溯全期）</h3>
+      <canvas id="backfillDifficultyChart"></canvas>
+    </div>
+    <div class="card">
+      <h3>🎯 风险位置热度（回溯全期）</h3>
+      <div id="backfillRiskPos"></div>
+    </div>
+  </div>
+
+  <!-- 回溯分析：联赛风险榜 + 关键相关性 -->
+  <div class="row row-2">
+    <div class="card">
+      <h3>⚽ 联赛风险榜（回溯全期）</h3>
+      <div id="backfillLeagueRisk"></div>
+    </div>
+    <div class="card">
+      <h3>🔗 关键相关性</h3>
+      <div id="backfillCorrelation"></div>
+    </div>
+  </div>
+
+  <!-- 比赛详情表（按期查询） -->
+  <div class="card">
+    <h3>🏟 每期比赛详情表</h3>
+    <div class="period-selector" id="periodSelector"></div>
+    <div style="overflow-x:auto;" id="periodMatchDetail"></div>
+  </div>
+
+  <!-- 联赛 & 球队统计 -->
+  <div class="card">
+    <h3>⚽ 联赛 & 球队统计</h3>
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('league')">联赛统计</button>
+      <button class="tab-btn" onclick="switchTab('team')">球队统计</button>
+    </div>
+    <div class="tab-panel active" id="tabLeague">
+      <div style="overflow-x:auto;" id="leagueTable"></div>
+    </div>
+    <div class="tab-panel" id="tabTeam">
+      <div style="overflow-x:auto;" id="teamTable"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>⚽ 足彩14场胜负彩历史数据统计仪表盘 | 数据源：国家体育总局体育彩票管理中心 sporttery.cn</p>
+  <p>⚠️ 以上为历史统计推演，不构成投注建议。足球赛果为独立事件。请理性购彩，量力而行。</p>
+  <p>Generated by 体彩14场-agent · <span id="genTime"></span></p>
+</div>
+
+<script>
+// ====== 数据加载 ======
+window.INLINE_DATA = (typeof __DASHBOARD_DATA__ !== 'undefined') ? __DASHBOARD_DATA__ : null;
+
+async function loadData() {
+  if (window.INLINE_DATA) return window.INLINE_DATA;
+  try {
+    const resp = await fetch('../data/dashboard_data.json');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return await resp.json();
+  } catch (e) {
+    document.getElementById('pageMeta').textContent = '⚠ 数据加载失败: ' + e.message + '（若直接双击打开，请使用 index_standalone.html）';
+    return null;
+  }
+}
+
+// ====== 工具函数 ======
+function fmtMoney(n) {
+  if (!n || n === 0) return '0';
+  if (n >= 100000000) return (n / 100000000).toFixed(2) + '亿';
+  if (n >= 10000) return (n / 10000).toFixed(0) + '万';
+  return n.toLocaleString();
+}
+
+function resultEmoji(r) {
+  if (r === 3 || r === '3') return '🏠';
+  if (r === 1 || r === '1') return '🤝';
+  if (r === 0 || r === '0') return '✈️';
+  return '❓';
+}
+
+function resultCSS(r) {
+  if (r === 3 || r === '3') return 'result-win';
+  if (r === 1 || r === '1') return 'result-draw';
+  if (r === 0 || r === '0') return 'result-lose';
+  return 'result-star';
+}
+
+function resultName(r) {
+  if (r === 3 || r === '3') return '主胜';
+  if (r === 1 || r === '1') return '平局';
+  if (r === 0 || r === '0') return '客胜';
+  if (r === '*') return '延期';
+  return String(r);
+}
+
+// ====== KPI 行 ======
+function renderKPI(data) {
+  const latest = data.latestDraw;
+  const diff = data.difficulty;
+  const summ = data.summary;
+  const sportCount = data.leagueSummary ? data.leagueSummary.length : 0;
+  const teamCount = data.teamSummary ? data.teamSummary.length : 0;
+
+  // 最新一期的 3/1/0 分布
+  let latestWin = 0, latestDraw = 0, latestLose = 0;
+  if (data.distributionTrend && data.distributionTrend.length > 0) {
+    const l = data.distributionTrend[0];
+    latestWin = l.win; latestDraw = l.draw; latestLose = l.lose;
+  }
+
+  let diffClass = 'diff-1';
+  if (diff.level >= 5) diffClass = 'diff-5';
+  else if (diff.level >= 4) diffClass = 'diff-4';
+  else if (diff.level >= 3) diffClass = 'diff-3';
+  else if (diff.level >= 2) diffClass = 'diff-2';
+
+  document.getElementById('kpiRow').innerHTML = `
+    <div class="card">
+      <h3>📅 最新开奖</h3>
+      <div class="stat-item">
+        <div class="stat-value navy" style="font-size:1.2em;">第 ${latest.code} 期</div>
+        <div class="stat-label">${latest.date}</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>🏟 14场赛果分布</h3>
+      <div style="display:flex; justify-content:center; gap:16px; padding:10px;">
+        <div class="stat-item"><div class="stat-value win">${latestWin}</div><div class="stat-label">🏠主胜</div></div>
+        <div class="stat-item"><div class="stat-value draw">${latestDraw}</div><div class="stat-label">🤝平局</div></div>
+        <div class="stat-item"><div class="stat-value lose">${latestLose}</div><div class="stat-label">✈️客胜</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>⚖ 难度评级</h3>
+      <div style="text-align:center; padding:10px;">
+        <span class="difficulty-badge ${diffClass}" style="font-size:1.4em;">${diff.levelLabel}</span>
+        <div class="stat-label" style="margin-top:4px;">综合评分 ${diff.totalScore.toFixed(1)}/10</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>📊 统计概览</h3>
+      <div class="stat-grid">
+        <div class="stat-item"><div class="stat-value gold">${data.dataRange.totalDraws}</div><div class="stat-label">数据总量(期)</div></div>
+        <div class="stat-item"><div class="stat-value navy">${sportCount}</div><div class="stat-label">联赛数</div></div>
+        <div class="stat-item"><div class="stat-value win">${summ.hotpotCount}</div><div class="stat-label">火锅奖</div></div>
+        <div class="stat-item"><div class="stat-value lose">${summ.coldCount}</div><div class="stat-label">冷门期</div></div>
+      </div>
+    </div>
+  `;
+}
+
+// ====== 最新赛果矩阵 ======
+function renderLatestResult(data) {
+  const latest = data.latestDraw;
+  const html = [];
+
+  // 标注期号
+  const issueTag = document.getElementById('latestIssueTag');
+  if (issueTag) {
+    issueTag.textContent = `（第 ${latest.code} 期 · ${latest.date || ''}）`;
+  }
+
+  // 14格赛果矩阵
+  html.push('<div class="result-grid" style="margin-bottom:10px;">');
+  if (latest.matches && latest.matches.length > 0) {
+    for (let i = 0; i < Math.min(latest.matches.length, 14); i++) {
+      const m = latest.matches[i];
+      const r = latest.results[i];
+      html.push(`<div class="result-cell ${resultCSS(r)}">${i+1}场<br>${resultEmoji(r)} ${resultName(r)}</div>`);
+    }
+  } else {
+    // 无matchList
+    for (let i = 0; i < Math.min(latest.results.length, 14); i++) {
+      const r = latest.results[i];
+      html.push(`<div class="result-cell ${resultCSS(r)}">${i+1}场<br>${resultEmoji(r)} ${resultName(r)}</div>`);
+    }
+  }
+  html.push('</div>');
+
+  // 比赛详情表
+  html.push('<table class="match-table"><thead><tr>');
+  html.push('<th>场次</th><th>联赛</th><th>主队</th><th></th><th>客队</th><th>赛果</th><th>比分</th>');
+  html.push('</tr></thead><tbody>');
+
+  if (latest.matches && latest.matches.length > 0) {
+    for (let i = 0; i < Math.min(latest.matches.length, 14); i++) {
+      const m = latest.matches[i];
+      const r = latest.results[i];
+      html.push(`<tr>
+        <td><b>${i+1}</b></td>
+        <td><span class="league-tag">${m.league}</span></td>
+        <td><b>${m.home}</b></td>
+        <td>vs</td>
+        <td><b>${m.away}</b></td>
+        <td class="${resultCSS(r)}"><b>${resultEmoji(r)} ${resultName(r)}</b></td>
+        <td>${m.score || '-'}</td>
+      </tr>`);
+    }
+  } else {
+    // 无matchList时只展示赛果
+    const r = latest.results;
+    html.push(`<tr><td colspan="7">赛果序列: ${r.map(r=>resultEmoji(r)+resultName(r)).join(' | ')}</td></tr>`);
+  }
+  html.push('</tbody></table>');
+
+  document.getElementById('latestResultMatrix').innerHTML = html.join('');
+}
+
+// ====== 难度评估图 ======
+function renderDifficultyChart(data) {
+  const diff = data.difficulty;
+  const ctx = document.getElementById('difficultyChart').getContext('2d');
+
+  // 标注评估对应的期号
+  const issueTag = document.getElementById('diffIssueTag');
+  if (issueTag) {
+    issueTag.textContent = data.latestDraw && data.latestDraw.code
+      ? `（第 ${data.latestDraw.code} 期 · ${data.latestDraw.date || ''}）`
+      : '';
+  }
+
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['平局因子(30%)', '奖金波动(25%)', '命中难度(25%)', '结果分散度(20%)'],
+      datasets: [{
+        data: [diff.drawScore, diff.cvScore, diff.hitScore, diff.entScore],
+        backgroundColor: ['#e65100', '#c62828', '#1a237e', '#ff9800'],
+        borderWidth: 2,
+        borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  document.getElementById('difficultyDetail').innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+      <div>📐 平局因子: <b>${diff.drawScore.toFixed(1)}</b>/10</div>
+      <div>💹 奖金波动: <b>${diff.cvScore.toFixed(1)}</b>/10</div>
+      <div>🎯 命中难度: <b>${diff.hitScore.toFixed(1)}</b>/10</div>
+      <div>🔀 分散度: <b>${diff.entScore.toFixed(1)}</b>/10</div>
+      <div style="grid-column:1/-1; margin-top:4px;">
+        📊 平均平局率: <b>${(diff.avgDrawRate*100).toFixed(1)}%</b> |
+        🔀 平均熵值: <b>${diff.avgEnt.toFixed(2)}</b>
+      </div>
+    </div>
+  `;
+}
+
+// ====== 胜平负分布趋势 ======
+function renderDistributionChart(data) {
+  const dist = data.distributionTrend;
+  if (!dist || dist.length === 0) return;
+
+  const labels = dist.map(d => d.code).reverse();
+  const winData = dist.map(d => d.win).reverse();
+  const drawData = dist.map(d => d.draw).reverse();
+  const loseData = dist.map(d => d.lose).reverse();
+
+  const ctx = document.getElementById('distributionChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: '🏠主胜(3)', data: winData, backgroundColor: '#2e7d32', stack: 'stack0' },
+        { label: '🤝平局(1)', data: drawData, backgroundColor: '#e65100', stack: 'stack0' },
+        { label: '✈️客胜(0)', data: loseData, backgroundColor: '#c62828', stack: 'stack0' }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { stacked: true, ticks: { font: { size: 9 } } },
+        y: { stacked: true, max: 14, ticks: { stepSize: 2 } }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+// ====== 位置热度表 ======
+function renderPositionHeat(data) {
+  const heat = data.positionHeat;
+  if (!heat || heat.length === 0) return;
+
+  let html = '<table><thead><tr>';
+  html += '<th>位置</th><th>主胜(3)</th><th>平局(1)</th><th>客胜(0)</th><th>最热</th><th>熵值</th><th>风险</th><th>最新对阵</th>';
+  html += '</tr></thead><tbody>';
+
+  for (const h of heat) {
+    const winPct = (h.winPct || 0).toFixed(0) + '%';
+    const drawPct = (h.drawPct || 0).toFixed(0) + '%';
+    const losePct = (h.losePct || 0).toFixed(0) + '%';
+    const maxLabel = { win: '主胜', draw: '平局', lose: '客胜' }[h.maxKey] || '';
+    let riskHtml = '';
+    if (h.risk === 'high') riskHtml = '<span class="risk-high">🔴高</span>';
+    else if (h.risk === 'medium_draw') riskHtml = '<span class="risk-draw">⚠平局陷阱</span>';
+    else if (h.risk === 'medium') riskHtml = '<span class="risk-medium">🟡中</span>';
+    else riskHtml = '<span class="risk-low">🟢低</span>';
+
+    const matchInfo = h.latestMatch ? `${h.latestMatch.home}vs${h.latestMatch.away}` : '-';
+    const entClass = h.ent > 0.8 ? 'risk-high' : h.ent > 0.5 ? 'risk-medium' : 'risk-low';
+
+    html += `<tr>
+      <td><b>第${h.position}场</b></td>
+      <td style="color:#2e7d32;font-weight:bold;">${winPct}</td>
+      <td style="color:#e65100;font-weight:bold;">${drawPct}</td>
+      <td style="color:#c62828;font-weight:bold;">${losePct}</td>
+      <td>${maxLabel}</td>
+      <td><span class="${entClass}">${(h.ent||0).toFixed(2)}</span></td>
+      <td>${riskHtml}</td>
+      <td style="font-size:0.85em;">${matchInfo}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+
+  document.getElementById('positionHeatTable').innerHTML = html;
+}
+
+// ====== 奖金走势图 ======
+function renderPrizeChart(data) {
+  const trend = data.prizeTrend;
+  if (!trend || trend.length === 0) return;
+
+  const labels = trend.map(t => t.code).reverse();
+  const amounts = trend.map(t => t.prize1Amount).reverse();
+
+  const ctx = document.getElementById('prizeChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: '一等奖单注奖金(元)',
+        data: amounts,
+        backgroundColor: amounts.map(a => {
+          if (a <= 100000) return '#4caf50';
+          if (a <= 500000) return '#ff9800';
+          return '#f44336';
+        }),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { ticks: { callback: v => fmtMoney(v) } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => fmtMoney(ctx.raw) } }
+      }
+    }
+  });
+
+  // 类型分布饼图
+  const hotpotCnt = trend.filter(t => t.type === '🍲火锅奖').length;
+  const coldCnt = trend.filter(t => t.type === '🧊冷门期').length;
+  const zeroCnt = trend.filter(t => t.type === '🥶无人中').length;
+  const normalCnt = trend.filter(t => t.type === '●正常').length;
+
+  const pieCtx = document.getElementById('prizeTypeChart').getContext('2d');
+  new Chart(pieCtx, {
+    type: 'pie',
+    data: {
+      labels: ['🍲火锅奖', '🧊冷门期', '🥶无人中', '●正常'],
+      datasets: [{
+        data: [hotpotCnt, coldCnt, zeroCnt, normalCnt],
+        backgroundColor: ['#ff9800', '#2196f3', '#f44336', '#4caf50']
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }
+    }
+  });
+
+  document.getElementById('prizeTypeSummary').innerHTML = `
+    🍲火锅奖: <b>${hotpotCnt}</b> 期 |
+    🧊冷门期: <b>${coldCnt}</b> 期 |
+    🥶无人中: <b>${zeroCnt}</b> 期
+  `;
+}
+
+// ====== 奖金详情表 ======
+function renderPrizeDetailTable(data) {
+  const trend = data.prizeTrend;
+  if (!trend || trend.length === 0) return;
+
+  let html = '<table><thead><tr>';
+  html += '<th>期号</th><th>日期</th><th>销售额</th><th>一等奖注数</th><th>一等奖金额</th><th>二等奖注数</th><th>二等奖金额</th><th>类型</th>';
+  html += '</tr></thead><tbody>';
+
+  for (const t of trend) {
+    let typeTag = '';
+    if (t.type === '🍲火锅奖') typeTag = '<span class="tag tag-hotpot">🍲火锅</span>';
+    else if (t.type === '🧊冷门期') typeTag = '<span class="tag tag-cold">🧊冷门</span>';
+    else if (t.type === '🥶无人中') typeTag = '<span class="tag tag-zero">🥶无人中</span>';
+    else typeTag = '<span class="tag tag-normal">●正常</span>';
+
+    html += `<tr>
+      <td><b>${t.code}</b></td>
+      <td>${t.date}</td>
+      <td>${fmtMoney(t.totalSale)}</td>
+      <td>${t.prize1Count}</td>
+      <td>${fmtMoney(t.prize1Amount)}</td>
+      <td>${t.prize2Count}</td>
+      <td>${fmtMoney(t.prize2Amount)}</td>
+      <td>${typeTag}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+
+  document.getElementById('prizeDetailTable').innerHTML = html;
+}
+
+// ====== 往期评估记录 ======
+function renderHistoryEvaluations(data) {
+  const history = data.historyEvaluations;
+  const container = document.getElementById('historyEvaluationDetail');
+  const selector = document.getElementById('historySelector');
+  if (!container || !selector) return;
+  if (!history || history.length === 0) {
+    selector.innerHTML = '';
+    container.innerHTML = '<p>暂无往期评估记录</p>';
+    return;
+  }
+
+  // 期号选择器
+  let selectorHtml = '';
+  history.forEach((h, idx) => {
+    selectorHtml += `<button class="period-btn ${idx===0?'active':''}" onclick="showHistoryEval(${idx})">第${h.issue}期</button>`;
+  });
+  selector.innerHTML = selectorHtml;
+
+  // 存储数据
+  window._historyEvaluations = history;
+
+  // 默认展示最新一期
+  showHistoryEvalContent(history[0]);
+}
+
+function showHistoryEval(idx) {
+  document.querySelectorAll('#historySelector .period-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === idx);
+  });
+  showHistoryEvalContent(window._historyEvaluations[idx]);
+}
+
+function diffBadgeClass(level) {
+  if (level >= 5) return 'diff-5';
+  if (level >= 4) return 'diff-4';
+  if (level >= 3) return 'diff-3';
+  if (level >= 2) return 'diff-2';
+  return 'diff-1';
+}
+
+function showHistoryEvalContent(h) {
+  if (!h) return;
+  const container = document.getElementById('historyEvaluationDetail');
+  const d = h.difficulty;
+
+  let html = `<div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:12px;">`;
+  html += `<div><span style="color:#888;font-size:0.85em;">期号</span><br><b style="font-size:1.1em;">第 ${h.issue} 期</b></div>`;
+  html += `<div><span style="color:#888;font-size:0.85em;">日期</span><br><b>${h.date || '-'}</b></div>`;
+  html += `<div><span style="color:#888;font-size:0.85em;">难度评级</span><br><span class="difficulty-badge ${diffBadgeClass(d.level)}">${d.levelLabel}</span></div>`;
+  html += `<div><span style="color:#888;font-size:0.85em;">综合评分</span><br><b>${d.totalScore.toFixed(1)}/10</b></div>`;
+  if (h.prizeCV != null) html += `<div><span style="color:#888;font-size:0.85em;">奖金CV</span><br><b>${h.prizeCV.toFixed(2)}</b></div>`;
+  html += `<div><span style="color:#888;font-size:0.85em;">平均平局率</span><br><b>${(d.avgDrawRate*100).toFixed(1)}%</b></div>`;
+  html += `</div>`;
+
+  // 近期奖金类型
+  if (h.recent5Types && h.recent5Types.length > 0) {
+    html += `<div style="margin-bottom:12px;font-size:0.85em;color:#666;">🏷 近5期奖金类型：${h.recent5Types.join(' · ')}</div>`;
+  }
+
+  // 风险场次
+  html += `<div style="margin-bottom:12px;"><b>⚠️ 风险场次（${h.riskyPositions ? h.riskyPositions.length : 0}）：</b>`;
+  if (h.riskyPositions && h.riskyPositions.length > 0) {
+    html += `<table class="match-table" style="margin-top:6px;"><thead><tr><th>场次</th><th>风险</th><th>对阵</th></tr></thead><tbody>`;
+    for (const r of h.riskyPositions) {
+      const matchInfo = r.match ? `${r.match.league}·${r.match.home} vs ${r.match.away}` : '-';
+      html += `<tr><td><b>第${r.position}场</b></td><td>${r.riskLabel || r.risk}</td><td style="font-size:0.85em;">${matchInfo}</td></tr>`;
+    }
+    html += `</tbody></table>`;
+  } else {
+    html += ` 无</div>`;
+  }
+
+  // 安全场次
+  html += `<div style="margin-bottom:4px;"><b>🟢 安全场次（${h.safePositions ? h.safePositions.length : 0}）：</b>`;
+  if (h.safePositions && h.safePositions.length > 0) {
+    const items = h.safePositions.map(s => {
+      const maxLabel = { win: '主胜', draw: '平局', lose: '客胜' }[s.maxKey] || '';
+      const matchInfo = s.match ? `${s.match.home}vs${s.match.away}` : '';
+      return `第${s.position}场(${maxLabel}×${s.maxVal} ${matchInfo})`;
+    }).join('、');
+    html += ` <span style="font-size:0.85em;">${items}</span>`;
+  } else {
+    html += ` 无</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+// ====== 回溯分析渲染 ======
+function renderBackfillAnalysis(data) {
+  const ba = data.backfillAnalysis;
+  if (!ba) {
+    document.getElementById('backfillKpiRow').innerHTML = '';
+    document.getElementById('backfillDifficultyChart').parentElement.innerHTML = '<p style="text-align:center;color:#999;">暂无回溯分析数据</p>';
+    document.getElementById('backfillRiskPos').innerHTML = '';
+    document.getElementById('backfillLeagueRisk').innerHTML = '';
+    document.getElementById('backfillCorrelation').innerHTML = '';
+    return;
+  }
+
+  // ---- KPI 行 ----
+  const lc = ba.levelCount || {};
+  document.getElementById('backfillKpiRow').innerHTML = `
+    <div class="card">
+      <h3>📊 回溯期数</h3>
+      <div class="stat-item"><div class="stat-value navy">${ba.totalEvaluations}</div><div class="stat-label">评估期数</div></div>
+    </div>
+    <div class="card">
+      <h3>📈 平均难度</h3>
+      <div class="stat-item"><div class="stat-value gold">${ba.avgTotalScore.toFixed(2)}</div><div class="stat-label">综合评分 /10</div></div>
+    </div>
+    <div class="card">
+      <h3>🔴 高难占比</h3>
+      <div class="stat-item"><div class="stat-value lose">${((lc['🔴 中高']||0) + (lc['💀 高难']||0))}</div><div class="stat-label">中高/高难期数</div></div>
+    </div>
+    <div class="card">
+      <h3>🟢 低难占比</h3>
+      <div class="stat-item"><div class="stat-value win">${((lc['🟢 低']||0) + (lc['🟡 中低']||0))}</div><div class="stat-label">低/中低期数</div></div>
+    </div>
+  `;
+
+  // ---- 难度走势折线图 ----
+  const trend = ba.difficultyTrend || [];
+  if (trend.length > 0) {
+    const ctx = document.getElementById('backfillDifficultyChart').getContext('2d');
+    const labels = trend.map(t => t.issue).reverse();
+    const scores = trend.map(t => t.totalScore).reverse();
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: '综合难度评分',
+          data: scores,
+          borderColor: '#c62828',
+          backgroundColor: 'rgba(198,40,40,0.1)',
+          fill: true,
+          tension: 0.2,
+          pointRadius: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { min: 0, max: 10, ticks: { stepSize: 2 } },
+          x: { ticks: { font: { size: 8 }, maxTicksLimit: 15 } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  // ---- 风险位置热度表 ----
+  const riskRank = ba.riskPosRanking || [];
+  if (riskRank.length > 0) {
+    let html = '<table><thead><tr><th>位置</th><th>风险次数</th><th>占期数比</th><th>热度条</th></tr></thead><tbody>';
+    const maxCnt = riskRank[0].count || 1;
+    for (const r of riskRank) {
+      const pct = r.rate;
+      const barW = Math.round((r.count / maxCnt) * 100);
+      const barColor = pct >= 50 ? '#ef5350' : pct >= 30 ? '#ff9800' : '#90caf9';
+      html += `<tr>
+        <td><b>第${r.position}场</b></td>
+        <td style="color:#c62828;font-weight:bold;">${r.count}</td>
+        <td>${pct.toFixed(0)}%</td>
+        <td style="text-align:left;width:40%;"><div style="background:${barColor};height:14px;border-radius:7px;width:${barW}%;"></div></td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    document.getElementById('backfillRiskPos').innerHTML = html;
+  }
+
+  // ---- 联赛风险榜 ----
+  const leagueRisk = ba.leagueRiskRanking || [];
+  if (leagueRisk.length > 0) {
+    let html = '<table><thead><tr><th>联赛</th><th>风险场次次数</th></tr></thead><tbody>';
+    const maxLg = leagueRisk[0].count || 1;
+    for (const l of leagueRisk) {
+      const barW = Math.round((l.count / maxLg) * 100);
+      html += `<tr>
+        <td><b>${l.league}</b></td>
+        <td style="text-align:left;">${l.count} <span style="display:inline-block;background:#c62828;height:12px;border-radius:6px;width:${barW}px;vertical-align:middle;"></span></td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    document.getElementById('backfillLeagueRisk').innerHTML = html;
+  }
+
+  // ---- 关键相关性 ----
+  const corrCv = ba.corrScoreCV, corrDraw = ba.corrScoreDraw;
+  function corrLabel(v) {
+    if (v == null) return 'N/A';
+    const a = Math.abs(v);
+    const strength = a >= 0.8 ? '强' : a >= 0.5 ? '中等' : '弱';
+    const dir = v >= 0 ? '正相关' : '负相关';
+    return `${v.toFixed(3)}（${strength}${dir}）`;
+  }
+  document.getElementById('backfillCorrelation').innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div style="background:#fafafa;border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:0.8em;color:#888;">难度 ↔ 奖金CV</div>
+        <div style="font-size:1.4em;font-weight:bold;color:#c62828;">${corrLabel(corrCv)}</div>
+      </div>
+      <div style="background:#fafafa;border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:0.8em;color:#888;">难度 ↔ 平局率</div>
+        <div style="font-size:1.4em;font-weight:bold;color:#e65100;">${corrLabel(corrDraw)}</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:0.85em;color:#666;">
+      💡 相关系数越接近 ±1 表示关联越强。平局率与奖金波动是难度评分的两大驱动因子。
+    </div>
+  `;
+}
+
+// ====== 未来期次提前评估 ======
+function renderForecast(data) {
+  const forecasts = data.forecastList || data.forecast || [];
+  const selector = document.getElementById('forecastSelector');
+  const container = document.getElementById('forecastDetail');
+  if (!selector || !container) return;
+
+  const list = Array.isArray(forecasts) ? forecasts : (forecasts.periods || []);
+  if (list.length === 0) {
+    selector.innerHTML = '';
+    container.innerHTML = '<p style="color:#999;">暂无未来期次预测（开奖后自动转入比对）</p>';
+    return;
+  }
+
+  // 期号切换器
+  let selHtml = '';
+  list.forEach((f, i) => {
+    selHtml += `<button class="period-btn ${i===0?'active':''}" onclick="showForecast(${i})">第${f.issue}期</button>`;
+  });
+  selector.innerHTML = selHtml;
+  window._forecasts = list;
+  showForecastContent(list[0]);
+}
+
+function showForecast(idx) {
+  document.querySelectorAll('#forecastSelector .period-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+  showForecastContent(window._forecasts[idx]);
+}
+
+function showForecastContent(f) {
+  if (!f) return;
+  const container = document.getElementById('forecastDetail');
+  const dist = f.distribution || { win: 0, draw: 0, lose: 0 };
+
+  let html = `<div style="margin-bottom:10px;font-size:0.9em;">`;
+  html += `<b>第 ${f.issue} 期</b> | 停售: ${f.saleEndTime || '-'} | `;
+  html += `预测分布: <span style="color:#2e7d32;">主胜${dist.win}</span> / <span style="color:#e65100;">平局${dist.draw}</span> / <span style="color:#c62828;">客胜${dist.lose}</span>`;
+  html += `</div>`;
+
+  html += '<table class="match-table"><thead><tr>';
+  html += '<th>场次</th><th>联赛</th><th>主队</th><th>VS</th><th>客队</th><th>预测</th><th>信心</th><th>胜/平/负概率</th><th>历史位置风险</th>';
+  html += '</tr></thead><tbody>';
+
+  for (const m of f.matches || []) {
+    const predColor = m.pred === 3 ? '#2e7d32' : m.pred === 1 ? '#e65100' : '#c62828';
+    const riskTag = m.histRisk && m.histRisk !== '🟢低' ? `<span style="color:#c62828;font-size:0.8em;">${m.histRisk}</span>` : '<span style="color:#999;font-size:0.8em;">-</span>';
+    const isRisk = (f.riskMatches || []).some(r => r.position === m.position);
+    html += `<tr${isRisk ? ' style="background:#fff5f5;"' : ''}>
+      <td><b>${m.position}</b>${isRisk?' ⚠':''}</td>
+      <td><span class="league-tag">${m.league}</span></td>
+      <td><b>${m.home}</b></td>
+      <td>vs</td>
+      <td><b>${m.away}</b></td>
+      <td style="color:${predColor};font-weight:bold;">${m.predLabel}</td>
+      <td>${m.confidence != null ? m.confidence + '%' : '-'}</td>
+      <td style="font-size:0.8em;">${m.homeProb}%/ ${m.drawProb}%/ ${m.awayProb}%</td>
+      <td>${riskTag}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  html += `<div style="margin-top:8px;font-size:0.8em;color:#999;">⚠ 红色底为风险场次（信心低或历史位置易爆冷）。预测基于欧赔隐含概率，仅供统计参考，不构成投注建议。</div>`;
+  container.innerHTML = html;
+}
+
+// ====== 评估 vs 真实赛果比对 ======
+function renderComparison(data) {
+  const comp = data.comparison;
+  const summaryEl = document.getElementById('comparisonSummary');
+  const selectorEl = document.getElementById('comparisonSelector');
+  const tableEl = document.getElementById('comparisonTable');
+  if (!summaryEl || !tableEl) return;
+
+  if (!comp || !comp.summary || !comp.periods || comp.periods.length === 0) {
+    summaryEl.innerHTML = '';
+    if (selectorEl) selectorEl.innerHTML = '';
+    tableEl.innerHTML = '<p style="color:#999;">暂无比对数据（需期次开奖后回填赛果）</p>';
+    return;
+  }
+
+  const s = comp.summary;
+  summaryEl.innerHTML = `
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:12px;">
+      <div style="background:#fafafa;border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:0.8em;color:#888;">已比对期数</div>
+        <div style="font-size:1.6em;font-weight:bold;color:#1a237e;">${s.totalPeriods}</div>
+      </div>
+      <div style="background:#fafafa;border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:0.8em;color:#888;">风险场次爆冷命中</div>
+        <div style="font-size:1.6em;font-weight:bold;color:#c62828;">${s.riskHitRate != null ? s.riskHitRate + '%' : '-'}</div>
+        <div style="font-size:0.75em;color:#888;">${s.riskHit}/${s.riskTotal} 场</div>
+      </div>
+      <div style="background:#fafafa;border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:0.8em;color:#888;">安全场次稳定命中</div>
+        <div style="font-size:1.6em;font-weight:bold;color:#2e7d32;">${s.safeHitRate != null ? s.safeHitRate + '%' : '-'}</div>
+        <div style="font-size:0.75em;color:#888;">${s.safeHit}/${s.safeTotal} 场</div>
+      </div>
+      <div style="background:#fafafa;border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:0.8em;color:#888;">整体命中率</div>
+        <div style="font-size:1.6em;font-weight:bold;color:#e65100;">${s.overallHitRate != null ? s.overallHitRate + '%' : '-'}</div>
+        <div style="font-size:0.75em;color:#888;">${s.overallHit}/${s.overallTotal} 场</div>
+      </div>
+    </div>
+  `;
+
+  // 存储数据
+  window._comparisonPeriods = comp.periods;
+
+  // 期号切换器
+  if (selectorEl) {
+    let selHtml = '<span style="font-size:0.85em;color:#888;margin-right:4px;">选择期号查看逐场对比：</span>';
+    comp.periods.forEach((c, idx) => {
+      selHtml += `<button class="period-btn ${idx===0?'active':''}" onclick="showComparison(${idx})">第${c.issue}期</button>`;
+    });
+    selectorEl.innerHTML = selHtml;
+  }
+
+  // 默认展示最近一期逐场对比
+  showComparisonContent(comp.periods[0]);
+}
+
+function showComparison(idx) {
+  const periods = window._comparisonPeriods;
+  if (!periods || !periods[idx]) return;
+  document.querySelectorAll('#comparisonSelector .period-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+  showComparisonContent(periods[idx]);
+}
+
+function showComparisonContent(c) {
+  const tableEl = document.getElementById('comparisonTable');
+  if (!tableEl || !c) return;
+
+  const diffStr = c.difficulty ? `${c.difficulty.levelLabel} (${c.difficulty.totalScore.toFixed(1)}/10)` : '-';
+
+  let html = '';
+
+  // 该期概览条
+  html += `<div style="display:flex; flex-wrap:wrap; gap:16px; margin-bottom:12px; padding:10px; background:#fafafa; border-radius:8px; font-size:0.85em;">`;
+  html += `<div><span style="color:#888;">期号</span><br><b>第 ${c.issue} 期</b></div>`;
+  html += `<div><span style="color:#888;">日期</span><br><b>${c.date || '-'}</b></div>`;
+  html += `<div><span style="color:#888;">难度评级</span><br><b>${diffStr}</b></div>`;
+  html += `<div><span style="color:#888;">风险命中</span><br><b style="color:#c62828;">${c.riskHitRate != null ? c.riskHitRate + '%' : '-'}</b> (${c.riskHit}/${c.riskTotal})</div>`;
+  html += `<div><span style="color:#888;">安全命中</span><br><b style="color:#2e7d32;">${c.safeHitRate != null ? c.safeHitRate + '%' : '-'}</b> (${c.safeHit}/${c.safeTotal})</div>`;
+  html += `<div><span style="color:#888;">整体命中</span><br><b style="color:#e65100;">${c.overallHitRate != null ? c.overallHitRate + '%' : '-'}</b> (${c.overallHit}/${c.overallTotal})</div>`;
+  html += `</div>`;
+
+  // 真实赛果序列
+  if (c.realResults && c.realResults.length > 0) {
+    html += `<div style="margin-bottom:12px;font-size:0.8em;color:#666;">真实赛果序列：${c.realResults.map(r => resultEmoji(r) + resultName(r)).join(' · ')}</div>`;
+  }
+
+  // 风险场次逐场对比
+  html += `<div style="margin-bottom:14px;"><b style="color:#c62828;">🔴 风险场次逐场对比（${c.riskHit}/${c.riskTotal} 命中爆冷）</b>`;
+  if (c.riskCheck && c.riskCheck.length > 0) {
+    html += `<table class="match-table" style="margin-top:6px;"><thead><tr><th>场次</th><th>对阵</th><th>历史最热</th><th>真实赛果</th><th>判定</th></tr></thead><tbody>`;
+    for (const rc of c.riskCheck) {
+      const match = rc.match ? `<span class="league-tag">${rc.match.league}</span> ${rc.match.home} vs ${rc.match.away}${rc.match.score ? ' (' + rc.match.score + ')' : ''}` : '-';
+      html += `<tr>
+        <td><b>第${rc.position}场</b></td>
+        <td style="text-align:left;font-size:0.85em;">${match}</td>
+        <td>${keyName(rc.maxKey)}</td>
+        <td><b class="${resultCSS(rc.realResult)}">${resultEmoji(rc.realResult)} ${keyName(rc.realKey)}</b></td>
+        <td>${rc.hit ? '<span style="color:#c62828;font-weight:bold;">✅ 命中爆冷</span>' : '<span style="color:#999;">❌ 未爆冷</span>'}</td>
+      </tr>`;
+    }
+    html += `</tbody></table>`;
+  } else {
+    html += ` <span style="color:#999;font-size:0.85em;">无</span>`;
+  }
+  html += `</div>`;
+
+  // 安全场次逐场对比
+  html += `<div><b style="color:#2e7d32;">🟢 安全场次逐场对比（${c.safeHit}/${c.safeTotal} 命中稳定）</b>`;
+  if (c.safeCheck && c.safeCheck.length > 0) {
+    html += `<table class="match-table" style="margin-top:6px;"><thead><tr><th>场次</th><th>对阵</th><th>历史最热</th><th>真实赛果</th><th>判定</th></tr></thead><tbody>`;
+    for (const sc of c.safeCheck) {
+      const match = sc.match ? `<span class="league-tag">${sc.match.league}</span> ${sc.match.home} vs ${sc.match.away}${sc.match.score ? ' (' + sc.match.score + ')' : ''}` : '-';
+      html += `<tr>
+        <td><b>第${sc.position}场</b></td>
+        <td style="text-align:left;font-size:0.85em;">${match}</td>
+        <td>${keyName(sc.maxKey)}</td>
+        <td><b class="${resultCSS(sc.realResult)}">${resultEmoji(sc.realResult)} ${keyName(sc.realKey)}</b></td>
+        <td>${sc.hit ? '<span style="color:#2e7d32;font-weight:bold;">✅ 命中稳定</span>' : '<span style="color:#e65100;font-weight:bold;">❌ 意外爆冷</span>'}</td>
+      </tr>`;
+    }
+    html += `</tbody></table>`;
+  } else {
+    html += ` <span style="color:#999;font-size:0.85em;">无</span>`;
+  }
+  html += `</div>`;
+
+  tableEl.innerHTML = html;
+}
+
+function keyName(k) {
+  return { win: '主胜', draw: '平局', lose: '客胜', star: '延期' }[k] || k;
+}
+
+// ====== 每期比赛详情表 ======
+function renderPeriodMatches(data) {
+  const matches = data.recentMatches;
+  if (!matches) return;
+
+  const periods = Object.keys(matches).sort((a, b) => b.localeCompare(a));
+
+  // 期号选择器
+  let selectorHtml = '';
+  periods.forEach((code, idx) => {
+    selectorHtml += `<button class="period-btn ${idx===0?'active':''}" onclick="showPeriodMatch('${code}')">${code}</button>`;
+  });
+  document.getElementById('periodSelector').innerHTML = selectorHtml;
+
+  // 默认展示最新一期
+  if (periods.length > 0) {
+    showPeriodMatchContent(periods[0], matches[periods[0]]);
+  }
+
+  // 存储数据以便切换
+  window._periodMatches = matches;
+  window._periods = periods;
+}
+
+function showPeriodMatch(code) {
+  // 更新按钮状态
+  document.querySelectorAll('.period-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent === code);
+  });
+  showPeriodMatchContent(code, window._periodMatches[code]);
+}
+
+function showPeriodMatchContent(code, detail) {
+  if (!detail) return;
+
+  let html = `<div style="margin-bottom:8px;font-weight:bold;color:#1a237e;">📅 ${detail.date || code} | 💰 销售额: ${fmtMoney(detail.totalSale || 0)} | 🏆 一等奖: ${detail.prize1Count}注/${fmtMoney(detail.prize1Amount)}元</div>`;
+  html += '<table class="match-table"><thead><tr>';
+  html += '<th>场次</th><th>联赛</th><th>主队</th><th></th><th>客队</th><th>赛果</th><th>比分</th>';
+  html += '</tr></thead><tbody>';
+
+  if (detail.matches && detail.matches.length > 0) {
+    for (const m of detail.matches) {
+      const r = m.result;
+      html += `<tr>
+        <td><b>${m.matchNum}</b></td>
+        <td><span class="league-tag">${m.league}</span></td>
+        <td><b>${m.home}</b></td>
+        <td>vs</td>
+        <td><b>${m.away}</b></td>
+        <td class="${resultCSS(r)}"><b>${resultEmoji(r)} ${m.resultLabel || resultName(r)}</b></td>
+        <td>${m.score || '-'}</td>
+      </tr>`;
+    }
+  }
+  html += '</tbody></table>';
+
+  document.getElementById('periodMatchDetail').innerHTML = html;
+}
+
+// ====== 联赛统计表 ======
+function renderLeagueTable(data) {
+  const leagues = data.leagueSummary;
+  if (!leagues || leagues.length === 0) {
+    document.getElementById('leagueTable').innerHTML = '<p>暂无联赛统计数据</p>';
+    return;
+  }
+
+  let html = '<table><thead><tr>';
+  html += '<th>联赛</th><th>出赛场次</th><th>主胜</th><th>平局</th><th>客胜</th><th>主胜率</th><th>胜平负比例</th>';
+  html += '</tr></thead><tbody>';
+
+  for (const l of leagues) {
+    const total = l.homeWins + l.draws + l.awayWins;
+    const wPct = total > 0 ? (l.homeWins / total * 100) : 0;
+    const dPct = total > 0 ? (l.draws / total * 100) : 0;
+    const aPct = total > 0 ? (l.awayWins / total * 100) : 0;
+
+    html += `<tr>
+      <td><b>${l.name}</b></td>
+      <td>${l.appearances}</td>
+      <td style="color:#2e7d32;font-weight:bold;">${l.homeWins}</td>
+      <td style="color:#e65100;font-weight:bold;">${l.draws}</td>
+      <td style="color:#c62828;font-weight:bold;">${l.awayWins}</td>
+      <td>${l.homeWinRate.toFixed(1)}%</td>
+      <td>
+        <div class="win-bar-container" style="justify-content:center;">
+          <div class="win-bar win-bar-home" style="width:${wPct}px;"></div>
+          <div class="win-bar win-bar-draw" style="width:${dPct}px;"></div>
+          <div class="win-bar win-bar-away" style="width:${aPct}px;"></div>
+        </div>
+      </td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+
+  document.getElementById('leagueTable').innerHTML = html;
+}
+
+// ====== 球队统计表 ======
+function renderTeamTable(data) {
+  const teams = data.teamSummary;
+  if (!teams || teams.length === 0) {
+    document.getElementById('teamTable').innerHTML = '<p>暂无球队统计数据</p>';
+    return;
+  }
+
+  let html = '<table><thead><tr>';
+  html += '<th>#</th><th>球队</th><th>出场</th><th>胜</th><th>平</th><th>负</th><th>胜率</th><th>主/客</th><th>主要联赛</th>';
+  html += '</tr></thead><tbody>';
+
+  teams.forEach((t, idx) => {
+    const topLeagues = t.leagues ? t.leagues.slice(0, 3).map(l => `${l[0]}(${l[1].appearances})`).join(', ') : '-';
+
+    html += `<tr>
+      <td>${idx+1}</td>
+      <td><b>${t.name}</b></td>
+      <td>${t.totalMatches}</td>
+      <td style="color:#2e7d32;font-weight:bold;">${t.wins}</td>
+      <td style="color:#e65100;font-weight:bold;">${t.draws}</td>
+      <td style="color:#c62828;font-weight:bold;">${t.losses}</td>
+      <td><b>${t.winRate.toFixed(1)}%</b></td>
+      <td>${t.asHome}主/${t.asAway}客</td>
+      <td style="font-size:0.8em;">${topLeagues}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+
+  document.getElementById('teamTable').innerHTML = html;
+}
+
+// ====== Tab 切换 ======
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+  if (tab === 'league') {
+    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    document.getElementById('tabLeague').classList.add('active');
+  } else {
+    document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    document.getElementById('tabTeam').classList.add('active');
+  }
+}
+
+// ====== 主渲染 ======
+async function main() {
+  const data = await loadData();
+  if (!data) return;
+
+  document.getElementById('pageMeta').textContent =
+    `数据范围: 第 ${data.dataRange.earliestIssue} 期 ~ 第 ${data.dataRange.latestIssue} 期 (共 ${data.dataRange.totalDraws} 期)`;
+  document.getElementById('updateTime').textContent = `更新: ${new Date(data.generatedAt).toLocaleString('zh-CN')}`;
+  document.getElementById('genTime').textContent = data.generatedAt;
+
+  renderKPI(data);
+  renderLatestResult(data);
+  renderDifficultyChart(data);
+  renderDistributionChart(data);
+  renderPositionHeat(data);
+  renderPrizeChart(data);
+  renderPrizeDetailTable(data);
+  renderHistoryEvaluations(data);
+  renderForecast(data);
+  renderComparison(data);
+  renderBackfillAnalysis(data);
+  renderPeriodMatches(data);
+  renderLeagueTable(data);
+  renderTeamTable(data);
+}
+
+// ====== 深色/浅色模式 ======
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  try { localStorage.setItem('sfc-theme', theme); } catch(_) {}
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  const c = getComputedStyle(document.documentElement).getPropertyValue('--text-2').trim();
+  if (typeof Chart !== 'undefined') { Chart.defaults.color = c; }
+}
+function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem('sfc-theme'); } catch(_) {}
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved || (prefersDark ? 'dark' : 'light'));
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.addEventListener('click', () => {
+    const cur = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(cur);
+    location.reload();
+  });
+}
+initTheme();
+main();
+</script>
+</body>
+</html>

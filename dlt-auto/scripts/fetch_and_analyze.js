@@ -8,6 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const common = require(path.join(__dirname, '..', '..', 'scripts', 'lottery-common.js'));
 
 // ====== 路径常量 ======
 const ROOT = path.resolve(__dirname, '..');
@@ -19,6 +20,10 @@ const ANALYSIS_HISTORY_PATH = path.join(DATA_DIR, 'analysis_history.json');
 const DASHBOARD_DATA_PATH = path.join(DATA_DIR, 'dashboard_data.json');
 const REPORT_PATH = path.join(DATA_DIR, 'latest_report.md');
 const ERROR_LOG_PATH = path.join(DATA_DIR, 'error.log');
+const LAST_RUN_PATH = path.join(DATA_DIR, 'last_run.json');
+const DASHBOARD_DIR = path.join(ROOT, 'dashboard');
+const DASHBOARD_HTML_PATH = path.join(DASHBOARD_DIR, 'index.html');
+const DASHBOARD_STANDALONE_PATH = path.join(DASHBOARD_DIR, 'index_standalone.html');
 const TEMP_INPUT_PATH = path.join(DATA_DIR, '_temp_dlt_input.json');
 
 // ====== 加载配置 ======
@@ -92,42 +97,28 @@ function findConsecutivePairs(nums) {
 }
 
 // ====== 数据拉取 ======
-function fetchData(apiUrl, retryCount, retryDelayMs) {
+async function fetchData(apiUrl, retryCount, retryDelayMs) {
     log('📡 正在从 sporttery.cn 拉取最新大乐透开奖数据...');
 
-    for (let attempt = 1; attempt <= retryCount; attempt++) {
-        try {
-            const curlCmd = `curl -s --connect-timeout 10 --max-time 30 "${apiUrl}"`;
-            const raw = execSync(curlCmd, { encoding: 'utf8', maxBuffer: 5 * 1024 * 1024 });
-            const data = JSON.parse(raw);
+    const data = await common.fetchJson(apiUrl, { retries: retryCount, retryDelayMs });
 
-            if (!data || !data.value || !data.value.list) {
-                throw new Error('API 返回数据格式异常: ' + raw.slice(0, 200));
-            }
-
-            // 大乐透 API 返回格式: lotteryDrawResult = "前5 后2" (空格分隔)
-            const draws = data.value.list.map(d => {
-                const parts = d.lotteryDrawResult.split(' ').map(Number);
-                return {
-                    code: d.lotteryDrawNum,
-                    front: parts.slice(0, 5),
-                    back: parts.slice(5, 7),
-                    date: d.lotteryDrawTime
-                };
-            });
-
-            log(`✅ 成功拉取 ${draws.length} 期数据`);
-            return draws;
-        } catch (e) {
-            log(`⚠ 第 ${attempt}/${retryCount} 次拉取失败: ${e.message}`);
-            if (attempt < retryCount) {
-                log(`  等待 ${retryDelayMs / 1000}s 后重试...`);
-                const waitUntil = Date.now() + retryDelayMs;
-                while (Date.now() < waitUntil) {}
-            }
-        }
+    if (!data || !data.value || !data.value.list) {
+        throw new Error('API 返回数据格式异常');
     }
-    throw new Error(`数据拉取失败，已重试 ${retryCount} 次`);
+
+    // 大乐透 API 返回格式: lotteryDrawResult = "前5 后2" (空格分隔)
+    const draws = data.value.list.map(d => {
+        const parts = d.lotteryDrawResult.split(' ').map(Number);
+        return {
+            code: d.lotteryDrawNum,
+            front: parts.slice(0, 5),
+            back: parts.slice(5, 7),
+            date: d.lotteryDrawTime
+        };
+    });
+
+    log(`✅ 成功拉取 ${draws.length} 期数据`);
+    return draws;
 }
 
 // ====== 增量合并 ======
@@ -141,8 +132,7 @@ function mergeDraws(existingDraws, newDraws) {
     }
 
     log(`📥 发现 ${freshEntries.length} 个新期号: ${freshEntries.map(d => d.code).join(', ')}`);
-    const merged = [...freshEntries, ...existingDraws];
-    merged.sort((a, b) => b.code.localeCompare(a.code));
+    const merged = common.sortByCodeDesc([...freshEntries, ...existingDraws]);
     return { draws: merged, newCount: freshEntries.length, latestCode: freshEntries[0].code };
 }
 
@@ -224,37 +214,92 @@ function generatePredictions(draws, windowSize) {
     const window = draws.slice(0, windowSize);
     const { frontCount, backCount } = buildStats(draws, windowSize);
 
-    // 各区号池按频次排序
+    // ===== 增强：遗漏期数 + 近期热度（综合评分） =====
+    const frontLastIdx = {}, backLastIdx = {};
+    for (let i = 0; i < window.length; i++) {
+        for (const r of window[i].front) if (!(r in frontLastIdx)) frontLastIdx[r] = i;
+        for (const b of window[i].back) if (!(b in backLastIdx)) backLastIdx[b] = i;
+    }
+    const frontOverdue = {}, backOverdue = {};
+    for (let n = 1; n <= 35; n++) frontOverdue[n] = (n in frontLastIdx) ? frontLastIdx[n] : window.length;
+    for (let n = 1; n <= 12; n++) backOverdue[n] = (n in backLastIdx) ? backLastIdx[n] : window.length;
+    const frontRecent = {}, backRecent = {};
+    for (const d of window.slice(0, 10)) {
+        for (const r of d.front) frontRecent[r] = (frontRecent[r] || 0) + 1;
+        for (const b of d.back) backRecent[b] = (backRecent[b] || 0) + 1;
+    }
+
+    // 各区号池按综合评分排序（频次×2 + 中段遗漏回补加成 + 近期热度）
     const zonePools = {};
     for (const [zk, zv] of Object.entries(ZONES_DEF)) {
         const pool = [];
         for (let n = zv.range[0]; n <= zv.range[1]; n++) {
-            pool.push({ num: n, count: frontCount[n] || 0, label: frontLabel(frontCount[n] || 0) });
+            const count = frontCount[n] || 0;
+            const od = frontOverdue[n];
+            const recent = frontRecent[n] || 0;
+            // 综合评分：频次主导；遗漏 3~8 期处于"回补窗口"加分；近期出现加分；从未出分扣分
+            const score = count * 2
+                + (od >= 3 && od <= 8 ? 2.5 : 0)
+                + (od <= 2 ? 0.5 : 0)
+                + recent * 0.8
+                + (count === 0 ? -2 : 0);
+            pool.push({ num: n, count, label: frontLabel(count), overdue: od, score });
         }
-        pool.sort((a, b) => b.count - a.count);
+        pool.sort((a, b) => b.score - a.score || b.count - a.count);
         zonePools[zk] = pool;
     }
 
-    function buildFrontSet(dist) {
+    function buildFrontSet(dist, targetOdd) {
         const picked = [];
         for (const [zk, cnt] of [['Z1', dist[0]], ['Z2', dist[1]], ['Z3', dist[2]]]) {
             const pool = zonePools[zk];
-            const hotWarm = pool.filter(p => p.label === 'HOT' || p.label === 'WARM');
-            const cold = pool.filter(p => p.label === 'COLD' || p.label === 'ICE');
-            let selected = [];
-            for (let i = 0; i < hotWarm.length && selected.length < cnt; i++) {
-                if (!picked.includes(hotWarm[i].num)) selected.push(hotWarm[i].num);
-            }
-            for (let i = 0; i < cold.length && selected.length < cnt; i++) {
-                if (!picked.includes(cold[i].num)) selected.push(cold[i].num);
-            }
-            for (let i = 0; i < pool.length && selected.length < cnt; i++) {
-                if (!picked.includes(pool[i].num) && !selected.includes(pool[i].num)) selected.push(pool[i].num);
+            const selected = [];
+            for (const p of pool) {
+                if (selected.length >= cnt) break;
+                if (picked.includes(p.num) || selected.includes(p.num)) continue;
+                selected.push(p.num);
             }
             selected.sort((a, b) => a - b);
             for (const n of selected) picked.push(n);
         }
-        return picked.sort((a, b) => a - b);
+        // 奇偶平衡：把奇数个数调整到 targetOdd（7 码常见 4:3 / 3:4），同区替换保持分区
+        if (targetOdd != null && picked.length === 7) {
+            let odds = picked.filter(x => x % 2 === 1);
+            let evens = picked.filter(x => x % 2 === 0);
+            let diff = targetOdd - odds.length;
+            // 号码所属分区映射
+            const numZone = {};
+            for (const [zk, zv] of Object.entries(ZONES_DEF)) {
+                for (let n = zv.range[0]; n <= zv.range[1]; n++) numZone[n] = zk;
+            }
+            let guard = 0;
+            while (diff !== 0 && guard < 12) {
+                guard++;
+                const wantOdd = diff > 0;
+                const replaceNum = wantOdd ? evens[evens.length - 1] : odds[odds.length - 1];
+                if (replaceNum === undefined) break;
+                const zk = numZone[replaceNum];
+                // 从同区找同奇偶性、未选、分数最高的候选替换
+                const cand = zonePools[zk]
+                    .filter(p => (p.num % 2 === 1) === wantOdd && !picked.includes(p.num))
+                    .sort((a, b) => b.score - a.score);
+                if (cand.length === 0) break;
+                const idx = picked.indexOf(replaceNum);
+                if (idx < 0) break;
+                picked[idx] = cand[0].num;
+                if (wantOdd) {
+                    evens.splice(evens.indexOf(replaceNum), 1);
+                    odds.push(cand[0].num);
+                    diff--;
+                } else {
+                    odds.splice(odds.indexOf(replaceNum), 1);
+                    evens.push(cand[0].num);
+                    diff++;
+                }
+            }
+            picked.sort((a, b) => a - b);
+        }
+        return picked;
     }
 
     // 后区两码组合筛选 (和值 9-17)
@@ -270,10 +315,13 @@ function generatePredictions(draws, windowSize) {
                     ]);
                     const typesArr = [...types];
                     if (!typesArr.every(t => t === 'HOT') && !typesArr.every(t => t === 'COLD' || t === 'ICE')) {
+                        const odI = backOverdue[i], odJ = backOverdue[j];
+                        const bonusI = (odI >= 2 && odI <= 5 ? 2 : 0) + (backRecent[i] || 0) * 0.5;
+                        const bonusJ = (odJ >= 2 && odJ <= 5 ? 2 : 0) + (backRecent[j] || 0) * 0.5;
                         valid.push({
                             nums: [i, j], sum: s1,
                             types: typesArr.join('+'),
-                            score: typesArr.length * 10 + (backCount[i] || 0) + (backCount[j] || 0)
+                            score: typesArr.length * 10 + (backCount[i] || 0) + (backCount[j] || 0) + bonusI + bonusJ
                         });
                     }
                 }
@@ -290,8 +338,8 @@ function generatePredictions(draws, windowSize) {
     const t2 = validPairs.find(t => t.types.includes('WARM') && t.types.includes('COLD') && t !== t1)
             || validPairs[Math.min(validPairs.length - 1, 3)];
 
-    const set1 = buildFrontSet([3, 2, 2]); // 3-2-2 侧重一区
-    const set2 = buildFrontSet([2, 2, 3]); // 2-2-3 侧重三区
+    const set1 = buildFrontSet([3, 2, 2], 4); // 3-2-2 侧重一区，奇偶 4:3
+    const set2 = buildFrontSet([2, 2, 3], 3); // 2-2-3 侧重三区，奇偶 3:4
 
     function validateBuiltSet(frontNums) {
         const zones = { Z1: [], Z2: [], Z3: [] };
@@ -304,7 +352,8 @@ function generatePredictions(draws, windowSize) {
         const cons = findConsecutivePairs(frontNums);
         return {
             zones, hotCount, warmCount, coldCount: frontNums.length - hotCount - warmCount,
-            cons, distribution: `${zones.Z1.length}-${zones.Z2.length}-${zones.Z3.length}`
+            cons, distribution: `${zones.Z1.length}-${zones.Z2.length}-${zones.Z3.length}`,
+            oddCount: frontNums.filter(x => x % 2 === 1).length
         };
     }
 
@@ -318,7 +367,8 @@ function generatePredictions(draws, windowSize) {
             name, front, back,
             distribution: fv.distribution,
             hotCount: fv.hotCount, warmCount: fv.warmCount, coldCount: fv.coldCount,
-            consecutivePairs: fv.cons
+            consecutivePairs: fv.cons,
+            oddEven: fv.oddCount + ':' + (front.length - fv.oddCount)
         });
     }
 
@@ -489,6 +539,32 @@ function generateMarkdownReport(draws, windowSize, stats, predictions, review, e
     return lines.join('\n');
 }
 
+// ====== 生成内嵌数据版仪表盘 ======
+// 将 dashboard_data.json 内嵌进 index.html，生成可直接双击打开的单文件版
+function generateStandaloneDashboard(dashboardData) {
+    if (!fs.existsSync(DASHBOARD_HTML_PATH)) {
+        log('⚠ 未找到仪表盘模板 index.html，跳过内嵌版生成');
+        return;
+    }
+    const html = fs.readFileSync(DASHBOARD_HTML_PATH, 'utf8');
+    const dataJson = JSON.stringify(dashboardData);
+    const placeholder = "window.INLINE_DATA = (typeof __DASHBOARD_DATA__ !== 'undefined') ? __DASHBOARD_DATA__ : null;";
+    if (!html.includes(placeholder)) {
+        log('⚠ 仪表盘模板中未找到 INLINE_DATA 占位符，跳过内嵌版生成');
+        return;
+    }
+    const replaced = html.split(placeholder).join('window.INLINE_DATA = ' + dataJson + ';');
+    fs.writeFileSync(DASHBOARD_STANDALONE_PATH, replaced, 'utf8');
+    log('💾 已生成内嵌数据版仪表盘 index_standalone.html');
+}
+
+// ====== 运行状态 ======
+function saveLastRun(extra) {
+    const lastRun = { ranAt: new Date().toISOString(), ...extra };
+    fs.writeFileSync(LAST_RUN_PATH, JSON.stringify(lastRun, null, 2), 'utf8');
+    log('💾 已写入 last_run.json (updated=' + lastRun.updated + ')');
+}
+
 // ====== 主流程 ======
 async function main() {
     const config = loadConfig();
@@ -500,7 +576,7 @@ async function main() {
 
     // Step 1
     log('🔍 Step 1/5: 拉取原始数据...');
-    const newDraws = fetchData(analysis.apiUrl, analysis.retryCount, analysis.retryDelayMs);
+    const newDraws = await fetchData(analysis.apiUrl, analysis.retryCount, analysis.retryDelayMs);
 
     // Step 2
     log('📦 Step 2/5: 增量合并数据...');
@@ -511,6 +587,7 @@ async function main() {
     const force = process.argv.includes('--force');
     if (newCount === 0 && !force) {
         log('✅ 数据已是最新，无需更新分析');
+        saveLastRun({ latestCode: draws[0]?.code || null, latestDate: draws[0]?.date || null, newCount: 0, updated: false });
         console.log('='.repeat(70));
         return;
     }
@@ -558,6 +635,7 @@ async function main() {
     const dashboardData = generateDashboardData(draws, analysis.windowSize, predictions, review);
     fs.writeFileSync(DASHBOARD_DATA_PATH, JSON.stringify(dashboardData, null, 2), 'utf8');
     log('💾 已生成 dashboard_data.json');
+    generateStandaloneDashboard(dashboardData);
 
     const markdownReport = generateMarkdownReport(draws, analysis.windowSize, stats, predictions, review, '');
     fs.writeFileSync(REPORT_PATH, markdownReport, 'utf8');
@@ -577,6 +655,9 @@ async function main() {
     });
     if (analysisHistory.length > 200) analysisHistory.splice(0, analysisHistory.length - 200);
     saveAnalysisHistory(analysisHistory);
+
+    // 写入本次运行状态（供通知脚本判断是否推送）
+    saveLastRun({ latestCode: draws[0].code, latestDate: draws[0].date, newCount, updated: true });
 
     // 终值摘要
     console.log('\n' + '='.repeat(70));

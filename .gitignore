@@ -1,17 +1,27 @@
 # 依赖
 node_modules/
 
-# 数据源（大文件/临时文件，不推送到站点）
+# 数据文件（大文件/运行产物，不推送到站点）
 ssq-auto/data/
 sfc-auto/data/
 dlt-auto/data/
-ssq-auto/dashboard/
-sfc-auto/dashboard/
 
-# 本地配置与凭据
+# 仪表盘生成产物（模板 index.html 保留，standalone 为内嵌数据产物）
+*/dashboard/index_standalone.html
+
+# 本地配置与凭据（含飞书 webhook，勿提交）
 *.local.json
 scheduled_tasks.json
-dlt-auto/config.json
+*/config.json
+
+# 大文件 / 安装包 / 临时产物
+*.exe
+orca-windows-setup.exe
+doc_extract.txt
+temp_*.py
+temp_*.js
+zc_*.json
+zucai.html
 
 # 临时文件
 *.tmp
